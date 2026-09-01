@@ -1,0 +1,107 @@
+draft: true
+Name: JP8K
+short-description: JP-8000 / JP-8080 inspired supersaw voice for CV/gate patches and drones.
+summary: >
+  A Workshop Computer virtual-analog voice inspired by the JP-8000 and JP-8080
+  supersaw sound. Patch CV and gate for a playable Eurorack oscillator, or flip
+  Z up for a self-running drone. X spreads seven fixed-point saw oscillators,
+  while Y darkens or brightens the stack before it leaves the stereo audio outs.
+Language: C++ (RP2040 Pico SDK / ComputerCard)
+Creator: Adrian Vos + AI
+Version: "0.1.0"
+Status: WIP
+License: MIT
+date-created: 2026-09-01
+date-updated: 2026-09-01
+
+tags:
+  - oscillator
+  - synthesizer
+  - supersaw
+  - drone
+  - cv-gate
+  - virtual-analog
+
+panel:
+  inputs:
+    - id: AudioIn1
+      name: Gate In
+      description: Audio input used as an alternate gate or envelope trigger when it rises above the threshold
+    - id: AudioIn2
+      name: Reserved
+      description: Reserved for a future character input or external mix path
+    - id: CVIn1
+      name: Pitch CV
+      description: Bipolar pitch modulation added to Main, roughly plus or minus two octaves
+    - id: CVIn2
+      name: Spread CV
+      description: Adds modulation to the detune/spread amount set by X
+    - id: PulseIn1
+      name: Gate
+      description: Opens the voice envelope in gated mode
+    - id: PulseIn2
+      name: Reserved
+      description: Reserved for sync, accent, or mode control in a later version
+  outputs:
+    - id: AudioOut1
+      name: Left / Mono
+      description: Supersaw voice output
+    - id: AudioOut2
+      name: Right
+      description: Stereo companion output in Up and Down modes; mono mirror in Middle
+    - id: CVOut1
+      name: Pitch Monitor
+      description: Approximate pitch monitor CV derived from the internal note value
+    - id: CVOut2
+      name: Brightness Monitor
+      description: CV following the Y brightness/filter setting
+    - id: PulseOut1
+      name: Gate Monitor
+      description: High while the voice envelope is being held open
+    - id: PulseOut2
+      name: Saw Clock
+      description: Square pulse derived from the centre oscillator phase
+
+controls:
+  switch:
+    up:
+      name: Drone Stereo
+      description: Voice stays open continuously with stereo spread active
+    middle:
+      name: Gated Mono
+      description: Pulse In 1 or Audio In 1 opens the voice envelope; both audio outputs carry the same signal
+    down:
+      name: Gated Stereo
+      description: Gated play with stereo spread active for wide leads and chords from external pitch CV
+  knobs:
+    - main:
+        name: Pitch
+        description: Five-octave pitch sweep, with CV In 1 added on top
+      x:
+        name: Spread
+        description: Detunes the seven saw oscillators from tight unison to a wide supersaw cloud
+      y:
+        name: Brightness
+        description: One-pole tone control from warm pad to bright raw saw
+  leds:
+    - display: list
+      items:
+        - id: LED0
+          name: Drone Mode
+          description: Lit when Z is up
+        - id: LED1
+          name: Stereo Width
+          description: Brightness follows stereo spread
+        - id: LED2
+          name: Gate
+          description: Lit while the voice is open
+        - id: LED3
+          name: Brightness
+          description: Brightness follows the Y tone control
+        - id: LED4
+          name: Pitch
+          description: Brightness follows the internal pitch value
+        - id: LED5
+          name: Envelope
+          description: Brightness follows the output envelope
+
