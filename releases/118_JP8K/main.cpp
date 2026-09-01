@@ -2,7 +2,9 @@
 //
 // This is not an attempt to copy Roland firmware. It is a small Workshop-sized
 // instrument built around the same playable idea: a wide, detuned stack of saws
-// that can behave as a CV/gate oscillator or as a self-running drone.
+// that can behave as a CV/gate oscillator or as a self-running drone. The docs'
+// first patch is a Sandstorm-inspired bright gated lead: Z down, moderate X
+// detune, bright Y, Pulse In 1 for gate, and CV In 1 for the riff.
 //
 // Audio-rate work stays deliberately plain: seven 32-bit phase accumulators,
 // one fixed-point low-pass, one envelope, and integer mixing. Pitch and panel
