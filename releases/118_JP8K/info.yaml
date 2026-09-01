@@ -3,9 +3,10 @@ Name: JP8K
 short-description: JP-8000 / JP-8080 inspired supersaw voice for CV/gate patches and drones.
 summary: >
   A Workshop Computer virtual-analog voice inspired by the JP-8000 and JP-8080
-  supersaw sound. Patch CV and gate for a playable Eurorack oscillator, or flip
-  Z up for a self-running drone. X spreads seven fixed-point saw oscillators,
-  while Y darkens or brightens the stack before it leaves the stereo audio outs.
+  supersaw sound, with a Sandstorm-inspired initial setup documented for bright
+  gated leads. Patch CV and gate for a playable Eurorack oscillator, or flip Z
+  up for a self-running drone. X spreads seven fixed-point saw oscillators, while
+  Y darkens or brightens the stack before it leaves the stereo audio outs.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
 Version: "0.1.0"
@@ -71,8 +72,8 @@ controls:
       name: Gated Mono
       description: Pulse In 1 or Audio In 1 opens the voice envelope; both audio outputs carry the same signal
     down:
-      name: Gated Stereo
-      description: Gated play with stereo spread active for wide leads and chords from external pitch CV
+      name: Supersaw Lead
+      description: Gated stereo play with spread active; the recommended Sandstorm-inspired starting mode
   knobs:
     - main:
         name: Pitch
@@ -104,4 +105,3 @@ controls:
         - id: LED5
           name: Envelope
           description: Brightness follows the output envelope
-

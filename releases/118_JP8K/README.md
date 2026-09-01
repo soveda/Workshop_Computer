@@ -9,6 +9,26 @@ The first version is designed as a CV/gate Eurorack oscillator with a drone
 option. Patch it into the Workshop System filters, Ring Mod, Slopes, Stompbox,
 or Mix just as you would patch an analog voice.
 
+## Initial Setup: Supersaw Lead
+
+For the intended first patch, start with a Sandstorm-inspired supersaw lead:
+
+| Control | Starting position |
+| --- | --- |
+| Z | Down: gated stereo |
+| Main | 12 o'clock, then tune to the riff with CV In 1 |
+| X | 10:30 to 11 o'clock for tight animated detune |
+| Y | 2 to 3 o'clock for bright saw edge |
+
+Patch **Pulse In 1** from a fast gate or envelope rhythm, and patch **CV In 1**
+from 4 Voltages, a sequencer, or another pitch source. Take **Audio Out 1** as
+mono, or use both audio outs for the wide version. A filter, VCA/envelope, and
+short delay after the card will get much closer to the classic trance lead
+shape than the raw oscillator alone.
+
+For an instant hands-free version, flip **Z Up**. The same supersaw stack stays
+open as a drone, with X setting the width and Y setting the edge.
+
 ## Controls
 
 | Control | Function |
@@ -49,4 +69,3 @@ The pitch CV input is intentionally described as approximate. Workshop Computer
 input calibration is not implemented in ComputerCard, so this is designed to be
 musically playable inside the Workshop System rather than a precision
 laboratory oscillator.
-
