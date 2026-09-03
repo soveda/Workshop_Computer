@@ -3,8 +3,9 @@
 // This is not an attempt to copy Roland firmware. It is a small Workshop-sized
 // instrument built around the same playable idea: a wide, detuned stack of saws
 // that can behave as a CV/gate oscillator or as a self-running drone. The docs'
-// first patch is a Sandstorm-inspired bright gated lead: Z down, moderate X
-// detune, bright Y, Pulse In 1 for gate, and CV In 1 for the riff.
+// first patch is a Sandstorm-inspired bright gated lead: Z middle, moderate X
+// detune, bright Y, Pulse In 1 for gate, and CV In 1 for the riff. Z down is
+// momentary, so it behaves as a held accent/gate gesture rather than a mode.
 //
 // Audio-rate work stays deliberately plain: seven 32-bit phase accumulators,
 // one fixed-point low-pass, one envelope, and integer mixing. Pitch and panel
@@ -83,7 +84,7 @@ public:
             update_controls();
         }
 
-        bool gate = drone_mode_;
+        bool gate = drone_mode_ || accent_held_;
         if (!gate) {
             if (!gate_latched_ && AudioIn1() > kGateEngage) gate_latched_ = true;
             if (gate_latched_ && AudioIn1() < kGateRelease) gate_latched_ = false;
@@ -103,7 +104,7 @@ public:
 
         int32_t mixed = filter_state_;
         mixed = (mixed * envelope_) >> 12;
-        mixed = (mixed * level_) >> 12;
+        mixed = (mixed * level_) >> 11;
 
         int32_t right = mixed;
         int32_t left = mixed;
@@ -136,12 +137,13 @@ private:
     int32_t side_state_ = 0;
     int32_t filter_coeff_ = 900;
     int32_t stereo_width_ = 0;
-    int32_t level_ = 1800;
+    int32_t level_ = 2400;
     int32_t envelope_ = 0;
     int32_t attack_step_ = 16;
     int32_t release_step_ = 4;
     bool drone_mode_ = false;
     bool stereo_mode_ = false;
+    bool accent_held_ = false;
     bool gate_latched_ = false;
 
     void update_controls()
@@ -152,13 +154,15 @@ private:
 
         const Switch sw = SwitchVal();
         drone_mode_ = (sw == Switch::Up);
-        stereo_mode_ = (sw != Switch::Middle);
+        accent_held_ = (sw == Switch::Down);
+        stereo_mode_ = true;
 
-        // Main scans five octaves from C1 to C6. CV In 1 adds roughly +/- two
-        // octaves, which makes the 4 Voltages section and Slopes useful pitch
-        // sources without pretending the uncalibrated input is precision 1V/oct.
-        int32_t note_q8 = (kBaseNoteIndex << 8) + (((main - 2048) * (60 << 8)) >> 12);
-        note_q8 += (CVIn1() * (24 << 8)) >> 11;
+        // Main is now a playable transpose/tune control around middle C rather
+        // than a huge sweep. CV In 1 is scaled as roughly 1V/oct: the Computer's
+        // bipolar input range is about +/-6V, so full-scale CV gives +/-6 octaves.
+        // The input itself is not calibrated, so this should be trimmed by ear.
+        int32_t note_q8 = (kBaseNoteIndex << 8) + (((main - 2048) * (24 << 8)) >> 12);
+        note_q8 += (CVIn1() * (72 << 8)) >> 11;
         note_q8 = clamp_int(note_q8, 0, (kNoteCount - 2) << 8);
         pitch_note_q8_ = note_q8;
 
@@ -183,9 +187,10 @@ private:
         if (filter_coeff_ > 4095) filter_coeff_ = 4095;
 
         stereo_width_ = stereo_mode_ ? (spread >> 1) : 0;
-        level_ = 1450 + ((4095 - (spread >> 1)) >> 2);
-        attack_step_ = drone_mode_ ? 4 : 24;
-        release_step_ = drone_mode_ ? 2 : 7;
+        level_ = 2600 + ((4095 - (spread >> 1)) >> 2);
+        if (accent_held_) level_ += 450;
+        attack_step_ = drone_mode_ ? 4 : 48;
+        release_step_ = drone_mode_ ? 2 : 10;
     }
 
     int32_t render_supersaw()
@@ -199,15 +204,15 @@ private:
             side += saw * ((i & 1) ? 1 : -1);
         }
 
-        side_state_ = side >> 2;
-        return sum >> 3;
+        side_state_ = side >> 3;
+        return sum >> 2;
     }
 
     void update_leds(bool gate)
     {
         LedOn(0, drone_mode_);
         LedBrightness(1, stereo_width_);
-        LedOn(2, gate);
+        LedOn(2, gate || accent_held_);
         LedBrightness(3, filter_coeff_);
         LedBrightness(4, pitch_note_q8_ >> 4);
         LedBrightness(5, envelope_);

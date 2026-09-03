@@ -5,8 +5,9 @@ summary: >
   A Workshop Computer virtual-analog voice inspired by the JP-8000 and JP-8080
   supersaw sound, with a Sandstorm-inspired initial setup documented for bright
   gated leads. Patch CV and gate for a playable Eurorack oscillator, or flip Z
-  up for a self-running drone. X spreads seven fixed-point saw oscillators, while
-  Y darkens or brightens the stack before it leaves the stereo audio outs.
+  up for a self-running drone. Z down is a momentary accent/forced-gate gesture.
+  X spreads seven fixed-point saw oscillators, while Y darkens or brightens the
+  stack before it leaves the stereo audio outs.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
 Version: "0.1.0"
@@ -33,7 +34,7 @@ panel:
       description: Reserved for a future character input or external mix path
     - id: CVIn1
       name: Pitch CV
-      description: Bipolar pitch modulation added to Main, roughly plus or minus two octaves
+      description: Bipolar pitch modulation added to Main, scaled as roughly 1V/oct across the Computer's plus or minus 6V input range
     - id: CVIn2
       name: Spread CV
       description: Adds modulation to the detune/spread amount set by X
@@ -49,7 +50,7 @@ panel:
       description: Supersaw voice output
     - id: AudioOut2
       name: Right
-      description: Stereo companion output in Up and Down modes; mono mirror in Middle
+      description: Stereo companion output in all modes
     - id: CVOut1
       name: Pitch Monitor
       description: Approximate pitch monitor CV derived from the internal note value
@@ -69,15 +70,15 @@ controls:
       name: Drone Stereo
       description: Voice stays open continuously with stereo spread active
     middle:
-      name: Gated Mono
-      description: Pulse In 1 or Audio In 1 opens the voice envelope; both audio outputs carry the same signal
-    down:
       name: Supersaw Lead
-      description: Gated stereo play with spread active; the recommended Sandstorm-inspired starting mode
+      description: Stable gated stereo play mode for the recommended Sandstorm-inspired starting patch
+    down:
+      name: Accent
+      description: Momentary held accent that forces the envelope open and slightly lifts the level
   knobs:
     - main:
-        name: Pitch
-        description: Five-octave pitch sweep, with CV In 1 added on top
+        name: Tune
+        description: Two-octave transpose and tuning trim, with 1V/oct-style CV In 1 added on top
       x:
         name: Spread
         description: Detunes the seven saw oscillators from tight unison to a wide supersaw cloud
