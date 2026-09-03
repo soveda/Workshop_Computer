@@ -15,36 +15,42 @@ For the intended first patch, start with a Sandstorm-inspired supersaw lead:
 
 | Control | Starting position |
 | --- | --- |
-| Z | Down: gated stereo |
-| Main | 12 o'clock, then tune to the riff with CV In 1 |
+| Z | Middle: gated supersaw lead |
+| Main | 12 o'clock, then trim by ear |
 | X | 10:30 to 11 o'clock for tight animated detune |
 | Y | 2 to 3 o'clock for bright saw edge |
 
 Patch **Pulse In 1** from a fast gate or envelope rhythm, and patch **CV In 1**
-from 4 Voltages, a sequencer, or another pitch source. Take **Audio Out 1** as
-mono, or use both audio outs for the wide version. A filter, VCA/envelope, and
-short delay after the card will get much closer to the classic trance lead
-shape than the raw oscillator alone.
+from 4 Voltages, a sequencer, or another pitch source. CV In 1 is scaled for
+roughly 1V/oct over the Computer's +/-6 V input range; use Main as the tuning
+trim because the input is not calibrated. Take **Audio Out 1** as mono, or use
+both audio outs for the wide version. A filter, VCA/envelope, and short delay
+after the card will get much closer to the classic trance lead shape than the
+raw oscillator alone.
 
 For an instant hands-free version, flip **Z Up**. The same supersaw stack stays
 open as a drone, with X setting the width and Y setting the edge.
+
+Hold **Z Down** for a momentary accent. It forces the envelope open and gives
+the voice a small level lift; release it to return to the normal gated lead or
+drone behavior.
 
 ## Controls
 
 | Control | Function |
 | --- | --- |
-| Main | Pitch, with CV In 1 added on top |
+| Main | Tune / transpose, with CV In 1 added on top |
 | X | Supersaw spread / detune |
 | Y | Brightness, from warm pad to raw bright saw |
 | Z Up | Drone stereo mode |
-| Z Middle | Gated mono mode |
-| Z Down | Gated stereo mode |
+| Z Middle | Gated stereo lead mode |
+| Z Down | Momentary accent / forced gate |
 
 ## Patch Points
 
 | Jack | Function |
 | --- | --- |
-| CV In 1 | Pitch CV, roughly +/- two octaves |
+| CV In 1 | Pitch CV, roughly 1V/oct across +/-6 V |
 | CV In 2 | Spread modulation |
 | Pulse In 1 | Gate input |
 | Audio In 1 | Alternate gate/envelope trigger using a threshold |
