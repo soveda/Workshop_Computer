@@ -14,7 +14,7 @@ Version: "0.1.0"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
-date-updated: 2026-09-01
+date-updated: 2026-09-03
 
 tags:
   - oscillator
@@ -34,7 +34,7 @@ panel:
       description: Reserved for a future character input or external mix path
     - id: CVIn1
       name: Pitch CV
-      description: Bipolar pitch modulation added to Main, scaled as roughly 1V/oct across the Computer's plus or minus 6V input range
+      description: Bipolar pitch modulation added to Main, using the fr330hfr33/CosmikC1zzl3 raw 1V/oct convention of about 341 input counts per volt
     - id: CVIn2
       name: Spread CV
       description: Adds modulation to the detune/spread amount set by X
@@ -81,7 +81,7 @@ controls:
         description: Two-octave transpose and tuning trim, with 1V/oct-style CV In 1 added on top
       x:
         name: Spread
-        description: Detunes the seven saw oscillators from tight unison to a wide supersaw cloud
+        description: Detunes the seven saw oscillators from single-saw tuning mode at minimum to a wide supersaw cloud
       y:
         name: Brightness
         description: One-pole tone control from warm pad to bright raw saw

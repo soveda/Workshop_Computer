@@ -24,24 +24,16 @@ constexpr int32_t kGateEngage = 300;   // Audio-input gate threshold, roughly 0.
 constexpr int32_t kGateRelease = 180;  // Hysteresis keeps slow envelopes stable.
 constexpr int32_t kMaxAudio = 2047;
 constexpr int32_t kMinAudio = -2048;
-
-// MIDI note 24 (C1) through 96 (C7), converted to 32-bit phase increments at
-// 48 kHz. The table avoids powf() and keeps pitch work out of the hot path.
-constexpr uint32_t kNoteInc[] = {
-    2926232u, 3100235u, 3284585u, 3479896u, 3686822u, 3906052u, 4138318u, 4384395u,
-    4645104u, 4921317u, 5213953u, 5523991u, 5852465u, 6200470u, 6569170u, 6959793u,
-    7373644u, 7812103u, 8276635u, 8768789u, 9290209u, 9842633u, 10427907u, 11047982u,
-    11704930u, 12400941u, 13138339u, 13919586u, 14747287u, 15624207u, 16553270u, 17537579u,
-    18580418u, 19685267u, 20855814u, 22095965u, 23409859u, 24801882u, 26276679u, 27839171u,
-    29494575u, 31248413u, 33106541u, 35075158u, 37160835u, 39370534u, 41711627u, 44191930u,
-    46819719u, 49603764u, 52553357u, 55678342u, 58989149u, 62496826u, 66213081u, 70150316u,
-    74321671u, 78741067u, 83423255u, 88383859u, 93639437u, 99207528u, 105106715u, 111356685u,
-    117978298u, 124993653u, 132426162u, 140300631u, 148643341u, 157482134u, 166846509u, 176767719u,
-    187278874u
-};
-
-constexpr int32_t kFirstNote = 24;
-constexpr int32_t kNoteCount = static_cast<int32_t>(sizeof(kNoteInc) / sizeof(kNoteInc[0]));
+constexpr int32_t kTuneSpreadDeadband = 96;
+constexpr int32_t kPitchUnitsPerOctave = 4096;
+constexpr int32_t kPitchInputCountsPerVolt = 341;
+constexpr int32_t kBaseMidiNote = 36;      // C2, matching fr330hfr33/Cosmik.
+constexpr int32_t kCenterMidiNote = 60;    // C4 at Main noon with no CV.
+constexpr int32_t kCenterPitchUnits =
+    ((kCenterMidiNote - kBaseMidiNote) * kPitchUnitsPerOctave) / 12;
+constexpr int32_t kMinPitchUnits = -2 * kPitchUnitsPerOctave;
+constexpr int32_t kMaxPitchUnits = 8 * kPitchUnitsPerOctave;
+constexpr uint32_t kC2PhaseIncrement = 5852465u;
 
 int32_t clamp_int(int32_t v, int32_t lo, int32_t hi)
 {
@@ -50,15 +42,35 @@ int32_t clamp_int(int32_t v, int32_t lo, int32_t hi)
     return v;
 }
 
-uint32_t pitch_to_inc(int32_t semitone_q8)
+uint32_t pitch_units_to_inc(int32_t units)
 {
-    int32_t note = semitone_q8 >> 8;
-    int32_t frac = semitone_q8 & 255;
-    note = clamp_int(note, 0, kNoteCount - 2);
+    static constexpr uint32_t kSemitoneRatioQ15[13] = {
+        32768u, 34716u, 36781u, 38968u, 41285u, 43740u, 46341u,
+        49097u, 52016u, 55109u, 58386u, 61858u, 65536u
+    };
 
-    uint32_t a = kNoteInc[note];
-    uint32_t b = kNoteInc[note + 1];
-    return a + (((b - a) * static_cast<uint32_t>(frac)) >> 8);
+    units = clamp_int(units, kMinPitchUnits, kMaxPitchUnits);
+    int32_t octaves = units / kPitchUnitsPerOctave;
+    int32_t remainder = units % kPitchUnitsPerOctave;
+    if (remainder < 0) {
+        remainder += kPitchUnitsPerOctave;
+        --octaves;
+    }
+
+    int32_t semitone = (remainder * 12) / kPitchUnitsPerOctave;
+    int32_t start = (semitone * kPitchUnitsPerOctave) / 12;
+    int32_t end = ((semitone + 1) * kPitchUnitsPerOctave) / 12;
+    int32_t fraction = ((remainder - start) << 15) / (end - start);
+    uint32_t ratio = kSemitoneRatioQ15[semitone] +
+        (uint32_t)((((int32_t)kSemitoneRatioQ15[semitone + 1] -
+        (int32_t)kSemitoneRatioQ15[semitone]) * fraction) >> 15);
+
+    uint32_t increment = (uint32_t)(((uint64_t)kC2PhaseIncrement * ratio) >> 15);
+    if (octaves >= 0)
+        increment <<= octaves;
+    else
+        increment >>= -octaves;
+    return increment;
 }
 
 int32_t clip_audio(int32_t v)
@@ -74,7 +86,7 @@ public:
     {
         for (int i = 0; i < kSawCount; ++i) {
             phase_[i] = 0x24924924u * static_cast<uint32_t>(i + 1);
-            inc_[i] = kNoteInc[36 - kFirstNote];
+            inc_[i] = pitch_units_to_inc(kCenterPitchUnits);
         }
     }
 
@@ -116,7 +128,7 @@ public:
         AudioOut1(clip_audio(left));
         AudioOut2(clip_audio(right));
 
-        CVOut1Precise((pitch_note_q8_ - (kBaseNoteIndex << 8)) << 4);
+        CVOut1Precise((pitch_units_ - kCenterPitchUnits) << 3);
         CVOut2Precise((filter_coeff_ - 128) << 5);
         PulseOut1(gate);
         PulseOut2(phase_[0] & 0x80000000u);
@@ -126,13 +138,12 @@ public:
 
 private:
     static constexpr int kSawCount = 7;
-    static constexpr int32_t kBaseNoteIndex = 36; // Table index 36 = MIDI note 60, middle C.
 
     uint32_t phase_[kSawCount];
     uint32_t inc_[kSawCount];
 
     uint32_t control_counter_ = 0;
-    int32_t pitch_note_q8_ = kBaseNoteIndex << 8;
+    int32_t pitch_units_ = kCenterPitchUnits;
     int32_t filter_state_ = 0;
     int32_t side_state_ = 0;
     int32_t filter_coeff_ = 900;
@@ -144,6 +155,7 @@ private:
     bool drone_mode_ = false;
     bool stereo_mode_ = false;
     bool accent_held_ = false;
+    bool tune_mode_ = true;
     bool gate_latched_ = false;
 
     void update_controls()
@@ -158,22 +170,28 @@ private:
         stereo_mode_ = true;
 
         // Main is now a playable transpose/tune control around middle C rather
-        // than a huge sweep. CV In 1 is scaled as roughly 1V/oct: the Computer's
-        // bipolar input range is about +/-6V, so full-scale CV gives +/-6 octaves.
-        // The input itself is not calibrated, so this should be trimmed by ear.
-        int32_t note_q8 = (kBaseNoteIndex << 8) + (((main - 2048) * (24 << 8)) >> 12);
-        note_q8 += (CVIn1() * (72 << 8)) >> 11;
-        note_q8 = clamp_int(note_q8, 0, (kNoteCount - 2) << 8);
-        pitch_note_q8_ = note_q8;
+        // than a huge sweep.
+        //
+        // Match the 1V/oct convention used by fr330hfr33 and CosmikC1zzl3:
+        //   4096 pitch units = 1 octave
+        //   341 CV input counts = 1 volt
+        //
+        // The input itself is not calibrated, so this is the repo's best-known
+        // raw-CV convention rather than lab-grade pitch tracking.
+        int32_t units = kCenterPitchUnits + (((main - 2048) * (2 * kPitchUnitsPerOctave)) >> 12);
+        units += (CVIn1() * kPitchUnitsPerOctave) / kPitchInputCountsPerVolt;
+        units = clamp_int(units, kMinPitchUnits, kMaxPitchUnits);
+        pitch_units_ = units;
 
-        const uint32_t base_inc = pitch_to_inc(note_q8);
+        const uint32_t base_inc = pitch_units_to_inc(units);
 
-        int32_t spread = x + ((CVIn2() + 2048) >> 1);
+        int32_t spread = x + CVIn2();
         spread = clamp_int(spread, 0, 4095);
+        tune_mode_ = (spread <= kTuneSpreadDeadband);
 
         // Detune is deliberately asymmetric: the centre voice stays stable,
         // while the outer saws fan out more quickly for that animated JP feel.
-        const int32_t detune = (spread * spread) >> 12; // 0..4095, finer near zero.
+        const int32_t detune = tune_mode_ ? 0 : (spread * spread) >> 12; // 0..4095, finer near zero.
         constexpr int32_t ratios[kSawCount] = {-34, -21, -11, 0, 13, 24, 39};
         for (int i = 0; i < kSawCount; ++i) {
             int32_t offset = (static_cast<int32_t>(base_inc >> 12) * detune * ratios[i]) >> 17;
@@ -186,7 +204,7 @@ private:
         filter_coeff_ = 96 + ((y * y) >> 12); // 96..4191
         if (filter_coeff_ > 4095) filter_coeff_ = 4095;
 
-        stereo_width_ = stereo_mode_ ? (spread >> 1) : 0;
+        stereo_width_ = (stereo_mode_ && !tune_mode_) ? (spread >> 1) : 0;
         level_ = 2600 + ((4095 - (spread >> 1)) >> 2);
         if (accent_held_) level_ += 450;
         attack_step_ = drone_mode_ ? 4 : 48;
@@ -195,6 +213,12 @@ private:
 
     int32_t render_supersaw()
     {
+        if (tune_mode_) {
+            phase_[3] += inc_[3];
+            side_state_ = 0;
+            return static_cast<int32_t>(phase_[3] >> 20) - 2048;
+        }
+
         int32_t sum = 0;
         int32_t side = 0;
         for (int i = 0; i < kSawCount; ++i) {
@@ -214,7 +238,7 @@ private:
         LedBrightness(1, stereo_width_);
         LedOn(2, gate || accent_held_);
         LedBrightness(3, filter_coeff_);
-        LedBrightness(4, pitch_note_q8_ >> 4);
+        LedBrightness(4, clamp_int((pitch_units_ - kMinPitchUnits) >> 2, 0, 4095));
         LedBrightness(5, envelope_);
     }
 };

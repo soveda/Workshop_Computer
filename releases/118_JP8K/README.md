@@ -22,11 +22,12 @@ For the intended first patch, start with a Sandstorm-inspired supersaw lead:
 
 Patch **Pulse In 1** from a fast gate or envelope rhythm, and patch **CV In 1**
 from 4 Voltages, a sequencer, or another pitch source. CV In 1 is scaled for
-roughly 1V/oct over the Computer's +/-6 V input range; use Main as the tuning
-trim because the input is not calibrated. Take **Audio Out 1** as mono, or use
-both audio outs for the wide version. A filter, VCA/envelope, and short delay
-after the card will get much closer to the classic trance lead shape than the
-raw oscillator alone.
+roughly 1V/oct using the same raw input convention as fr330hfr33 and
+CosmikC1zzl3: about 341 input counts per volt, with 4096 internal pitch units
+per octave. Use Main as the tuning trim because the input is not calibrated.
+Take **Audio Out 1** as mono, or use both audio outs for the wide version. A
+filter, VCA/envelope, and short delay after the card will get much closer to
+the classic trance lead shape than the raw oscillator alone.
 
 For an instant hands-free version, flip **Z Up**. The same supersaw stack stays
 open as a drone, with X setting the width and Y setting the edge.
@@ -40,7 +41,7 @@ drone behavior.
 | Control | Function |
 | --- | --- |
 | Main | Tune / transpose, with CV In 1 added on top |
-| X | Supersaw spread / detune |
+| X | Supersaw spread / detune; fully counter-clockwise switches to a single saw for tuning |
 | Y | Brightness, from warm pad to raw bright saw |
 | Z Up | Drone stereo mode |
 | Z Middle | Gated stereo lead mode |
@@ -75,3 +76,10 @@ The pitch CV input is intentionally described as approximate. Workshop Computer
 input calibration is not implemented in ComputerCard, so this is designed to be
 musically playable inside the Workshop System rather than a precision
 laboratory oscillator.
+
+For pitch testing, set **Z Up** for drone or **Z Middle** with a gate patched,
+set **Main** to 12 o'clock, set **X** fully counter-clockwise, leave **CV In 2**
+unpatched, and set **Y** high enough to hear a bright saw. In that position the
+card disables the detuned side oscillators and outputs only the centre saw, so
+1V/oct tracking can be checked without the supersaw beating confusing the
+tuner. Bring X up after tuning to restore the JP-style spread.
