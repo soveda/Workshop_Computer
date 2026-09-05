@@ -10,11 +10,11 @@ summary: >
   stack before it leaves the stereo audio outs.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
-Version: "0.1.2"
+Version: "0.1.3"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
-date-updated: 2026-09-03
+date-updated: 2026-09-05
 
 tags:
   - oscillator
@@ -27,8 +27,8 @@ tags:
 panel:
   inputs:
     - id: AudioIn1
-      name: Gate In
-      description: Audio input used as an alternate gate or envelope trigger when it rises above the threshold
+      name: Reserved
+      description: Reserved for a future audio-rate input path
     - id: AudioIn2
       name: Reserved
       description: Reserved for a future character input or external mix path
