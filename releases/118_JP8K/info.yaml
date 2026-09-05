@@ -10,7 +10,7 @@ summary: >
   stack before it leaves the stereo audio outs.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
-Version: "0.1.4"
+Version: "0.1.5"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
@@ -40,7 +40,7 @@ panel:
       description: Adds modulation to the detune/spread amount set by X
     - id: PulseIn1
       name: Gate
-      description: Opens the voice envelope in gated mode
+      description: Triggers the one-shot lead envelope in middle mode
     - id: PulseIn2
       name: Reserved
       description: Reserved for sync, accent, or mode control in a later version
@@ -71,7 +71,7 @@ controls:
       description: Voice stays open continuously with stereo spread active
     middle:
       name: Supersaw Lead
-      description: Stable gated stereo play mode for the recommended Sandstorm-inspired starting patch
+      description: Rising-edge triggered stereo lead mode for the recommended Sandstorm-inspired starting patch
     down:
       name: Accent
       description: Momentary held accent that forces the envelope open and slightly lifts the level

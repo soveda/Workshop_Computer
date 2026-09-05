@@ -36,9 +36,9 @@ Hold **Z Down** for a momentary accent. It forces the envelope open and gives
 the voice a small level lift; release it to return to the normal gated lead or
 drone behavior.
 
-In **Z Middle**, the voice waits for Pulse In 1 to go low before accepting the
-next high gate. This avoids a stuck-high or noisy pulse input turning the gated
-mode into a background drone.
+In **Z Middle**, a rising edge on Pulse In 1 triggers a short lead envelope.
+The audio path is hard-muted when that envelope closes, so a stuck-high or
+noisy pulse input cannot keep a background swarm running.
 
 ## Controls
 
@@ -57,7 +57,7 @@ mode into a background drone.
 | --- | --- |
 | CV In 1 | Pitch CV, roughly 1V/oct across +/-6 V |
 | CV In 2 | Spread modulation |
-| Pulse In 1 | Gate input |
+| Pulse In 1 | Rising-edge lead trigger |
 | Audio In 1 | Reserved |
 | Audio Out 1 | Left / mono output |
 | Audio Out 2 | Right output |
