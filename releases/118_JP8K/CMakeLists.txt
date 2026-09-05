@@ -23,6 +23,9 @@ pico_sdk_init()
 
 add_executable(${CARD_NAME}
     main.cpp
+    usb_descriptors.c
+    usb_midi_host.c
+    usb_midi_host_app_driver.c
 )
 
 target_include_directories(${CARD_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR})
@@ -30,6 +33,10 @@ target_include_directories(${CARD_NAME} PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(${CARD_NAME}
     pico_unique_id
     pico_stdlib
+    pico_multicore
+    tinyusb_device
+    tinyusb_host
+    tinyusb_board
     hardware_dma
     hardware_i2c
     hardware_pwm
@@ -53,4 +60,3 @@ target_compile_options(${CARD_NAME} PRIVATE
     -O3
 )
 target_link_options(${CARD_NAME} PRIVATE -Wl,--print-memory-usage)
-
