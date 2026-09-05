@@ -36,6 +36,10 @@ Hold **Z Down** for a momentary accent. It forces the envelope open and gives
 the voice a small level lift; release it to return to the normal gated lead or
 drone behavior.
 
+In **Z Middle**, the voice waits for Pulse In 1 to go low before accepting the
+next high gate. This avoids a stuck-high or noisy pulse input turning the gated
+mode into a background drone.
+
 ## Controls
 
 | Control | Function |
