@@ -82,8 +82,12 @@ class JP8K : public ComputerCard {
 public:
     JP8K()
     {
+        static constexpr uint32_t kClusteredPhase[kSawCount] = {
+            0xFFF00000u, 0x00080000u, 0x00180000u, 0x00000000u,
+            0xFFE80000u, 0x00280000u, 0xFFD80000u
+        };
         for (int i = 0; i < kSawCount; ++i) {
-            phase_[i] = 0x24924924u * static_cast<uint32_t>(i + 1);
+            phase_[i] = kClusteredPhase[i];
             inc_[i] = pitch_units_to_inc(kCenterPitchUnits);
         }
     }
@@ -96,6 +100,10 @@ public:
 
         const bool lead_gate = Connected(Input::Pulse1) && PulseIn1();
         const bool gate = drone_mode_ || accent_held_ || lead_gate;
+        if (lead_gate && !last_lead_gate_) {
+            sync_supersaw_phases();
+        }
+        last_lead_gate_ = lead_gate;
 
         if (gate) {
             envelope_ += attack_step_;
@@ -163,6 +171,7 @@ private:
     bool stereo_mode_ = false;
     bool accent_held_ = false;
     bool tune_mode_ = true;
+    bool last_lead_gate_ = false;
 
     void update_controls()
     {
@@ -204,8 +213,8 @@ private:
 
         // Detune is deliberately asymmetric: the centre voice stays stable,
         // while the outer saws fan out more quickly for that animated JP feel.
-        const int32_t detune = tune_mode_ ? 0 : (spread * spread) >> 12; // 0..4095, finer near zero.
-        constexpr int32_t ratios[kSawCount] = {-34, -21, -11, 0, 13, 24, 39};
+        const int32_t detune = tune_mode_ ? 0 : (spread * spread) >> 13; // 0..2047, finer near zero.
+        constexpr int32_t ratios[kSawCount] = {-24, -15, -8, 0, 9, 17, 27};
         for (int i = 0; i < kSawCount; ++i) {
             int32_t offset = static_cast<int32_t>(
                 ((static_cast<int64_t>(base_inc) * detune * ratios[i]) >> 29));
@@ -220,8 +229,8 @@ private:
         filter_coeff_ = 96 + ((y * y) >> 12); // 96..4191
         if (filter_coeff_ > 4095) filter_coeff_ = 4095;
 
-        stereo_width_ = (stereo_mode_ && !tune_mode_) ? (spread >> 1) : 0;
-        level_ = 3200 + ((4095 - (spread >> 1)) >> 2);
+        stereo_width_ = (stereo_mode_ && !tune_mode_) ? (spread >> 2) : 0;
+        level_ = 3400 + ((4095 - (spread >> 1)) >> 2);
         if (accent_held_) level_ += 450;
         attack_step_ = drone_mode_ ? 4 : 48;
         release_step_ = drone_mode_ ? 2 : 10;
@@ -240,12 +249,23 @@ private:
         for (int i = 0; i < kSawCount; ++i) {
             phase_[i] += inc_[i];
             int32_t saw = static_cast<int32_t>(phase_[i] >> 20) - 2048;
-            sum += saw * ((i == 3) ? 6 : 3);
+            sum += saw * ((i == 3) ? 12 : 4);
             side += saw * ((i & 1) ? 1 : -1);
         }
 
-        side_state_ = side >> 3;
-        return sum >> 4;
+        side_state_ = side >> 4;
+        return sum >> 5;
+    }
+
+    void sync_supersaw_phases()
+    {
+        static constexpr uint32_t kClusteredPhase[kSawCount] = {
+            0xFFF00000u, 0x00080000u, 0x00180000u, 0x00000000u,
+            0xFFE80000u, 0x00280000u, 0xFFD80000u
+        };
+        for (int i = 0; i < kSawCount; ++i) {
+            phase_[i] = kClusteredPhase[i];
+        }
     }
 
     void update_leds(bool gate)
