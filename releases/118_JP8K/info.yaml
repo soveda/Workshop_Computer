@@ -7,10 +7,11 @@ summary: >
   gated leads. Patch CV and gate for a playable Eurorack oscillator, or flip Z
   up for a self-running drone. Z down is a momentary accent/forced-gate gesture.
   X spreads seven fixed-point saw oscillators, while Y darkens or brightens the
-  stack before it leaves the stereo audio outs.
+  stack before it leaves the stereo audio outs. USB MIDI works in both device
+  and host modes for note/gate playability, pitch bend, and basic CC control.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
-Version: "0.1.9"
+Version: "0.1.10"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
@@ -101,8 +102,8 @@ controls:
           name: Brightness
           description: Brightness follows the Y tone control
         - id: LED4
-          name: Pitch
-          description: Brightness follows the internal pitch value
+          name: USB MIDI
+          description: Dim in USB device mode, brighter in USB host mode, and flashes bright on MIDI activity
         - id: LED5
-          name: Envelope
-          description: Brightness follows the output envelope
+          name: Envelope / MIDI Note
+          description: Brightness follows the envelope, or stays bright while a MIDI note is held

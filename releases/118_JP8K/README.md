@@ -80,7 +80,24 @@ The supersaw mix is centre-weighted with a bright attack transient and an
 audible spread curve, so X around 10:30-11:30 aims at the classic bright trance
 lead while higher settings clearly widen and detune the swarm.
 
-MIDI control is planned as a later step once the CV/gate voice is stable.
+USB MIDI works in device mode when patched to a computer, and in host mode when
+the Workshop Computer is powering a class-compliant USB MIDI controller. MIDI
+uses channel 1. Note on/off messages play the same voice and act like another
+sustained gate source; pitch bend is +/-2 semitones. While a MIDI note is held,
+the MIDI note sets the base pitch, with Main and CV In 1 still added as
+transpose/trim controls.
+
+MIDI CCs:
+
+| CC | Function |
+| --- | --- |
+| 1 or 20 | Spread, replacing X after the first received CC |
+| 21 or 74 | Brightness, replacing Y after the first received CC |
+| 7 | Volume, scaling the output level after the first received CC |
+
+LED 4 shows the USB MIDI setting: dimmer for device mode, brighter for host
+mode, and full-bright on MIDI activity. LED 5 follows the envelope, but stays
+bright while a MIDI note is held.
 
 The card runs the RP2040 at 192 MHz by default. A `JP8K_OVERCLOCK_240` build
 define is provided for later testing if the voice grows heavier, but the first

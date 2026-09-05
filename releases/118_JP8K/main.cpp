@@ -15,7 +15,10 @@
 
 #include "hardware/clocks.h"
 #include "hardware/vreg.h"
+#include "pico/multicore.h"
 #include "pico/stdlib.h"
+#include "tusb.h"
+#include "usb_midi_host.h"
 
 namespace {
 
@@ -33,6 +36,12 @@ constexpr int32_t kCenterPitchUnits =
 constexpr int32_t kMinPitchUnits = -2 * kPitchUnitsPerOctave;
 constexpr int32_t kMaxPitchUnits = 8 * kPitchUnitsPerOctave;
 constexpr uint32_t kC2PhaseIncrement = 5852465u;
+constexpr uint8_t kMidiCcModWheel = 1;
+constexpr uint8_t kMidiCcVolume = 7;
+constexpr uint8_t kMidiCcSpread = 20;
+constexpr uint8_t kMidiCcBrightnessAlt = 21;
+constexpr uint8_t kMidiCcBrightness = 74;
+constexpr int32_t kMidiActivitySamples = 24000;
 
 int32_t clamp_int(int32_t v, int32_t lo, int32_t hi)
 {
@@ -93,15 +102,58 @@ public:
         }
     }
 
+    bool ShouldBootUsbHost()
+    {
+        return USBPowerState() == USBPowerState_t::DFP;
+    }
+
+    void SetUsbHostMode(bool host_mode)
+    {
+        usb_host_mode_ = host_mode;
+    }
+
+    void SetUsbMidiConnected(bool connected)
+    {
+        usb_midi_connected_ = connected;
+        midi_activity_countdown_ = kMidiActivitySamples;
+    }
+
+    void ProcessUsbMidiByte(uint8_t byte)
+    {
+        midi_activity_countdown_ = kMidiActivitySamples;
+        process_midi_voice_byte(byte);
+    }
+
+    uint8_t MidiInChannel() const
+    {
+        return midi_in_channel_;
+    }
+
+    void ProcessUsbMidiVoiceByte(uint8_t byte)
+    {
+        ProcessUsbMidiByte(byte);
+    }
+
+    void SendPendingUsbMidiOutput()
+    {
+    }
+
+    void RefreshControls()
+    {
+        update_controls();
+    }
+
     virtual void __not_in_flash_func(ProcessSample)()
     {
-        if ((control_counter_++ & kControlMask) == 0) {
-            update_controls();
+        apply_pending_midi_events();
+        if (midi_activity_countdown_ > 0) {
+            --midi_activity_countdown_;
         }
 
         const bool lead_gate = Connected(Input::Pulse1) && PulseIn1();
         const bool accent_gate = Connected(Input::Pulse2) && PulseIn2();
-        const bool gate = drone_mode_ || accent_held_ || lead_gate;
+        const bool midi_gate = midi_note_active_;
+        const bool gate = drone_mode_ || accent_held_ || lead_gate || midi_gate;
         if (lead_gate && !last_lead_gate_) {
             sync_supersaw_phases();
             transient_env_ = kTransientMax;
@@ -169,7 +221,6 @@ private:
     uint32_t phase_[kSawCount];
     uint32_t inc_[kSawCount];
 
-    uint32_t control_counter_ = 0;
     int32_t pitch_units_ = kCenterPitchUnits;
     int32_t filter_state_ = 0;
     int32_t side_state_ = 0;
@@ -188,11 +239,34 @@ private:
     bool last_lead_gate_ = false;
     bool last_accent_gate_ = false;
 
+    uint8_t midi_in_channel_ = 0;
+    uint8_t midi_running_status_ = 0;
+    uint8_t midi_data_[2] = {};
+    uint8_t midi_data_count_ = 0;
+    uint8_t midi_note_ = kCenterMidiNote;
+    uint8_t midi_velocity_ = 100;
+    volatile uint8_t pending_midi_note_ = kCenterMidiNote;
+    volatile uint8_t pending_midi_velocity_ = 100;
+    volatile uint8_t pending_midi_note_off_ = kCenterMidiNote;
+    volatile bool pending_midi_note_on_ = false;
+    volatile bool pending_midi_note_off_event_ = false;
+    volatile bool midi_note_active_ = false;
+    volatile int32_t midi_pitch_bend_ = 0;
+    volatile int32_t midi_spread_cc_ = 0;
+    volatile int32_t midi_brightness_cc_ = 0;
+    volatile int32_t midi_volume_cc_ = 4095;
+    volatile bool midi_spread_cc_active_ = false;
+    volatile bool midi_brightness_cc_active_ = false;
+    volatile bool midi_volume_cc_active_ = false;
+    volatile bool usb_host_mode_ = false;
+    volatile bool usb_midi_connected_ = false;
+    volatile int32_t midi_activity_countdown_ = 0;
+
     void update_controls()
     {
         const int32_t main = KnobVal(Knob::Main);
-        const int32_t x = KnobVal(Knob::X);
-        const int32_t y = KnobVal(Knob::Y);
+        const int32_t x = midi_spread_cc_active_ ? midi_spread_cc_ : KnobVal(Knob::X);
+        const int32_t y = midi_brightness_cc_active_ ? midi_brightness_cc_ : KnobVal(Knob::Y);
 
         const Switch sw = SwitchVal();
         drone_mode_ = (sw == Switch::Up);
@@ -212,8 +286,12 @@ private:
         //
         // The input itself is not calibrated, so this is the repo's best-known
         // raw-CV convention rather than lab-grade pitch tracking.
-        int32_t units = kCenterPitchUnits + (((main - 2048) * (2 * kPitchUnitsPerOctave)) >> 12);
+        int32_t units = midi_note_active_ ? midi_note_pitch_units(midi_note_) : kCenterPitchUnits;
+        units += (((main - 2048) * (2 * kPitchUnitsPerOctave)) >> 12);
         units += (CVIn1() * kPitchUnitsPerOctave) / kPitchInputCountsPerVolt;
+        if (midi_note_active_) {
+            units += (midi_pitch_bend_ * kPitchUnitsPerOctave) / (8192 * 6);
+        }
         units = clamp_int(units, kMinPitchUnits, kMaxPitchUnits);
         pitch_units_ = units;
 
@@ -252,6 +330,14 @@ private:
 
         stereo_width_ = (stereo_mode_ && !tune_mode_) ? (spread >> 3) : 0;
         level_ = 3600 + ((4095 - (spread >> 1)) >> 3);
+        if (midi_volume_cc_active_) {
+            const int32_t volume_scale = 1024 + ((midi_volume_cc_ * 3) >> 2);
+            level_ = (level_ * volume_scale) >> 12;
+        }
+        if (midi_note_active_) {
+            const int32_t velocity_scale = 2048 + ((int32_t)midi_velocity_ << 4);
+            level_ = (level_ * velocity_scale) >> 12;
+        }
         const bool pulse2_high = Connected(Input::Pulse2) && PulseIn2();
         if (accent_held_ || pulse2_high) level_ += 420;
         transient_decay_ = (accent_held_ || pulse2_high) ? 16 : 24;
@@ -259,7 +345,7 @@ private:
         release_step_ = drone_mode_ ? 2 : 10;
     }
 
-    int32_t render_supersaw()
+    int32_t __not_in_flash_func(render_supersaw)()
     {
         if (tune_mode_) {
             phase_[3] += inc_[3];
@@ -280,7 +366,7 @@ private:
         return sum >> 5;
     }
 
-    void sync_supersaw_phases()
+    void __not_in_flash_func(sync_supersaw_phases)()
     {
         static constexpr uint32_t kClusteredPhase[kSawCount] = {
             0xFFF00000u, 0x00080000u, 0x00180000u, 0x00000000u,
@@ -291,16 +377,215 @@ private:
         }
     }
 
+    void process_midi_voice_byte(uint8_t byte)
+    {
+        if (byte >= 0xF8u) {
+            return;
+        }
+
+        if (byte & 0x80u) {
+            midi_running_status_ = byte;
+            midi_data_count_ = 0;
+            return;
+        }
+
+        const uint8_t type = midi_running_status_ & 0xF0u;
+        if (type != 0x80u && type != 0x90u && type != 0xB0u && type != 0xE0u) {
+            return;
+        }
+
+        midi_data_[midi_data_count_++] = byte & 0x7Fu;
+        if (midi_data_count_ < 2u) {
+            return;
+        }
+
+        midi_data_count_ = 0;
+        const uint8_t channel = midi_running_status_ & 0x0Fu;
+        if (channel != midi_in_channel_) {
+            return;
+        }
+
+        if (type == 0x90u && midi_data_[1] > 0) {
+            pending_midi_note_ = midi_data_[0];
+            pending_midi_velocity_ = midi_data_[1];
+            pending_midi_note_on_ = true;
+            return;
+        }
+
+        if (type == 0x80u || (type == 0x90u && midi_data_[1] == 0)) {
+            pending_midi_note_off_ = midi_data_[0];
+            pending_midi_note_off_event_ = true;
+            return;
+        }
+
+        if (type == 0xB0u) {
+            const int32_t control = midi_cc_to_control(midi_data_[1]);
+            if (midi_data_[0] == kMidiCcModWheel || midi_data_[0] == kMidiCcSpread) {
+                midi_spread_cc_ = control;
+                midi_spread_cc_active_ = true;
+            } else if (midi_data_[0] == kMidiCcBrightness ||
+                       midi_data_[0] == kMidiCcBrightnessAlt) {
+                midi_brightness_cc_ = control;
+                midi_brightness_cc_active_ = true;
+            } else if (midi_data_[0] == kMidiCcVolume) {
+                midi_volume_cc_ = control;
+                midi_volume_cc_active_ = true;
+            }
+            return;
+        }
+
+        if (type == 0xE0u) {
+            const int32_t bend = ((int32_t)midi_data_[1] << 7) | midi_data_[0];
+            midi_pitch_bend_ = bend - 8192;
+        }
+    }
+
+    int32_t midi_cc_to_control(uint8_t value) const
+    {
+        return ((int32_t)value * 4095) / 127;
+    }
+
+    int32_t midi_note_pitch_units(uint8_t note) const
+    {
+        return ((int32_t)note - kBaseMidiNote) * kPitchUnitsPerOctave / 12;
+    }
+
+    void apply_pending_midi_events()
+    {
+        if (pending_midi_note_on_) {
+            pending_midi_note_on_ = false;
+            midi_note_ = pending_midi_note_;
+            midi_velocity_ = pending_midi_velocity_;
+            midi_note_active_ = true;
+            sync_supersaw_phases();
+            transient_env_ = kTransientMax;
+        }
+
+        if (pending_midi_note_off_event_) {
+            pending_midi_note_off_event_ = false;
+            if (pending_midi_note_off_ == midi_note_) {
+                midi_note_active_ = false;
+            }
+        }
+    }
+
     void update_leds(bool gate)
     {
         LedOn(0, drone_mode_);
         LedBrightness(1, stereo_width_);
         LedOn(2, gate || accent_held_);
         LedBrightness(3, filter_coeff_);
-        LedBrightness(4, clamp_int((pitch_units_ - kMinPitchUnits) >> 2, 0, 4095));
-        LedBrightness(5, envelope_);
+        int32_t midi_status = usb_host_mode_ ? 2600 : 700;
+        if (!usb_midi_connected_) {
+            midi_status = usb_host_mode_ ? 1200 : 250;
+        }
+        if (midi_activity_countdown_ > 0) {
+            midi_status = 4095;
+        }
+        LedBrightness(4, midi_status);
+        LedBrightness(5, midi_note_active_ ? 4095 : envelope_);
     }
 };
+
+JP8K card;
+static volatile uint8_t host_midi_device_address = 0;
+
+extern "C" void tuh_midi_mount_cb(
+    uint8_t dev_addr,
+    uint8_t in_ep,
+    uint8_t out_ep,
+    uint8_t num_cables_rx,
+    uint16_t num_cables_tx)
+{
+    (void)in_ep;
+    (void)out_ep;
+    (void)num_cables_rx;
+    (void)num_cables_tx;
+
+    if (host_midi_device_address == 0) {
+        host_midi_device_address = dev_addr;
+    }
+    card.SetUsbMidiConnected(true);
+}
+
+extern "C" void tuh_midi_umount_cb(uint8_t dev_addr, uint8_t instance)
+{
+    (void)instance;
+
+    if (dev_addr == host_midi_device_address) {
+        host_midi_device_address = 0;
+        card.SetUsbMidiConnected(false);
+    }
+}
+
+extern "C" void tuh_midi_rx_cb(uint8_t dev_addr, uint32_t num_packets)
+{
+    if (dev_addr != host_midi_device_address || num_packets == 0) {
+        return;
+    }
+
+    uint8_t cable = 0;
+    uint8_t bytes[128];
+    while (true) {
+        uint32_t count = tuh_midi_stream_read(dev_addr, &cable, bytes, sizeof(bytes));
+        if (count == 0) {
+            break;
+        }
+
+        for (uint32_t i = 0; i < count; ++i) {
+            card.ProcessUsbMidiByte(bytes[i]);
+        }
+    }
+}
+
+extern "C" void tuh_midi_tx_cb(uint8_t dev_addr)
+{
+    (void)dev_addr;
+}
+
+extern "C" void tud_mount_cb(void)
+{
+    card.SetUsbMidiConnected(true);
+}
+
+extern "C" void tud_umount_cb(void)
+{
+    card.SetUsbMidiConnected(false);
+}
+
+void usb_midi_worker()
+{
+    sleep_ms(100);
+    const bool host_mode = card.ShouldBootUsbHost();
+    card.SetUsbHostMode(host_mode);
+
+    if (host_mode) {
+        tuh_init(0);
+    } else {
+        tud_init(0);
+    }
+
+    while (true) {
+        if (host_mode) {
+            tuh_task();
+        } else {
+            tud_task();
+            card.SendPendingUsbMidiOutput();
+
+            uint8_t bytes[64];
+            uint32_t count = tud_midi_stream_read(bytes, sizeof(bytes));
+            for (uint32_t i = 0; i < count; ++i) {
+                card.ProcessUsbMidiByte(bytes[i]);
+            }
+        }
+
+        static uint32_t control_divider = 0;
+        if ((control_divider++ & kControlMask) == 0) {
+            card.RefreshControls();
+        }
+        sleep_us(50);
+    }
+}
 
 int main()
 {
@@ -312,7 +597,7 @@ int main()
     set_sys_clock_khz(192000, true);
 #endif
 
-    JP8K card;
+    multicore_launch_core1(usb_midi_worker);
     card.EnableNormalisationProbe();
     card.Run();
 }
