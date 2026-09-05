@@ -287,7 +287,9 @@ private:
         // The input itself is not calibrated, so this is the repo's best-known
         // raw-CV convention rather than lab-grade pitch tracking.
         int32_t units = midi_note_active_ ? midi_note_pitch_units(midi_note_) : kCenterPitchUnits;
-        units += (((main - 2048) * (2 * kPitchUnitsPerOctave)) >> 12);
+        if (!midi_note_active_) {
+            units += (((main - 2048) * (2 * kPitchUnitsPerOctave)) >> 12);
+        }
         units += (CVIn1() * kPitchUnitsPerOctave) / kPitchInputCountsPerVolt;
         if (midi_note_active_) {
             units += (midi_pitch_bend_ * kPitchUnitsPerOctave) / (8192 * 6);
