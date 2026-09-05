@@ -72,6 +72,9 @@ The audio engine uses seven integer saw oscillators, fixed-point detune, a
 simple tone filter, and an attack/release envelope. Control calculations run
 every 32 samples so the 48 kHz audio interrupt stays light.
 
+The supersaw mix is centre-weighted with gentler outer detune so it keeps a
+solid pitch core while the side voices add swarm and movement.
+
 The card runs the RP2040 at 192 MHz by default. A `JP8K_OVERCLOCK_240` build
 define is provided for later testing if the voice grows heavier, but the first
 version should not need it.
