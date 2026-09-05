@@ -231,11 +231,11 @@ private:
 
         // Detune is deliberately asymmetric: the centre voice stays stable,
         // while the outer saws fan out more quickly for that animated JP feel.
-        const int32_t detune = tune_mode_ ? 0 : ((spread * spread) >> 13) + (spread >> 3);
+        const int32_t detune = tune_mode_ ? 0 : ((spread * spread) >> 13) + (spread >> 2);
         constexpr int32_t ratios[kSawCount] = {-28, -17, -9, 0, 10, 19, 31};
         for (int i = 0; i < kSawCount; ++i) {
             int32_t offset = static_cast<int32_t>(
-                ((static_cast<int64_t>(base_inc) * detune * ratios[i]) >> 29));
+                ((static_cast<int64_t>(base_inc) * detune * ratios[i]) >> 22));
             int32_t detuned = static_cast<int32_t>(base_inc) + offset;
             if (detuned < 1) detuned = 1;
             inc_[i] = static_cast<uint32_t>(detuned);
@@ -272,7 +272,7 @@ private:
         for (int i = 0; i < kSawCount; ++i) {
             phase_[i] += inc_[i];
             int32_t saw = static_cast<int32_t>(phase_[i] >> 20) - 2048;
-            sum += saw * ((i == 3) ? 16 : 5);
+            sum += saw * ((i == 3) ? 12 : 6);
             side += saw * ((i & 1) ? 1 : -1);
         }
 

@@ -76,9 +76,9 @@ The audio engine uses seven integer saw oscillators, fixed-point detune, a
 simple tone filter, and an attack/release envelope. Control calculations run
 every 32 samples so the 48 kHz audio interrupt stays light.
 
-The supersaw mix is centre-weighted with a bright attack transient and a
-sweet-spot spread curve, so X around 10:30-11:30 aims at the classic bright
-trance lead while still leaving room for wider swarm settings.
+The supersaw mix is centre-weighted with a bright attack transient and an
+audible spread curve, so X around 10:30-11:30 aims at the classic bright trance
+lead while higher settings clearly widen and detune the swarm.
 
 MIDI control is planned as a later step once the CV/gate voice is stable.
 
