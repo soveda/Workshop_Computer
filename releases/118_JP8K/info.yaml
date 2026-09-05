@@ -10,7 +10,7 @@ summary: >
   stack before it leaves the stereo audio outs.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
-Version: "0.1.5"
+Version: "0.1.6"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
@@ -34,13 +34,13 @@ panel:
       description: Reserved for a future character input or external mix path
     - id: CVIn1
       name: Pitch CV
-      description: Bipolar pitch modulation added to Main, using the fr330hfr33/CosmikC1zzl3 raw 1V/oct convention of about 341 input counts per volt
+      description: Bipolar pitch modulation added to Main, hardware-trimmed from the fr330hfr33/CosmikC1zzl3 raw 1V/oct convention to about 313 input counts per volt
     - id: CVIn2
       name: Spread CV
       description: Adds modulation to the detune/spread amount set by X
     - id: PulseIn1
       name: Gate
-      description: Triggers the one-shot lead envelope in middle mode
+      description: Sustains the lead envelope while high in middle mode
     - id: PulseIn2
       name: Reserved
       description: Reserved for sync, accent, or mode control in a later version
@@ -71,7 +71,7 @@ controls:
       description: Voice stays open continuously with stereo spread active
     middle:
       name: Supersaw Lead
-      description: Rising-edge triggered stereo lead mode for the recommended Sandstorm-inspired starting patch
+      description: Sustained-gate stereo lead mode for the recommended Sandstorm-inspired starting patch
     down:
       name: Accent
       description: Momentary held accent that forces the envelope open and slightly lifts the level
