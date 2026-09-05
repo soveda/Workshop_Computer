@@ -23,9 +23,8 @@ constexpr int32_t kControlMask = 31;
 constexpr int32_t kMaxAudio = 2047;
 constexpr int32_t kMinAudio = -2048;
 constexpr int32_t kTuneSpreadDeadband = 96;
-constexpr uint32_t kLeadHoldSamples = 3840; // 80 ms one-shot for gated lead mode.
 constexpr int32_t kPitchUnitsPerOctave = 4096;
-constexpr int32_t kPitchInputCountsPerVolt = 341;
+constexpr int32_t kPitchInputCountsPerVolt = 313; // 341 * 11/12 from hardware test.
 constexpr int32_t kBaseMidiNote = 36;      // C2, matching fr330hfr33/Cosmik.
 constexpr int32_t kCenterMidiNote = 60;    // C4 at Main noon with no CV.
 constexpr int32_t kCenterPitchUnits =
@@ -95,18 +94,8 @@ public:
             update_controls();
         }
 
-        const bool pulse_high = Connected(Input::Pulse1) && PulseIn1();
-        const bool lead_trigger = pulse_high && !last_pulse_high_;
-        last_pulse_high_ = pulse_high;
-
-        if (lead_trigger && !drone_mode_ && !accent_held_) {
-            lead_hold_samples_ = kLeadHoldSamples;
-        }
-
-        bool gate = drone_mode_ || accent_held_ || (lead_hold_samples_ > 0);
-        if (lead_hold_samples_ > 0) {
-            --lead_hold_samples_;
-        }
+        const bool lead_gate = Connected(Input::Pulse1) && PulseIn1();
+        const bool gate = drone_mode_ || accent_held_ || lead_gate;
 
         if (gate) {
             envelope_ += attack_step_;
@@ -116,7 +105,7 @@ public:
             if (envelope_ < 0) envelope_ = 0;
         }
 
-        if (!drone_mode_ && !accent_held_ && envelope_ == 0) {
+        if (!gate && envelope_ == 0) {
             filter_state_ = 0;
             side_state_ = 0;
             AudioOut1(0);
@@ -174,8 +163,6 @@ private:
     bool stereo_mode_ = false;
     bool accent_held_ = false;
     bool tune_mode_ = true;
-    bool last_pulse_high_ = false;
-    uint32_t lead_hold_samples_ = 0;
 
     void update_controls()
     {
@@ -191,9 +178,13 @@ private:
         // Main is now a playable transpose/tune control around middle C rather
         // than a huge sweep.
         //
-        // Match the 1V/oct convention used by fr330hfr33 and CosmikC1zzl3:
+        // Start from the 1V/oct convention used by fr330hfr33 and CosmikC1zzl3:
         //   4096 pitch units = 1 octave
         //   341 CV input counts = 1 volt
+        //
+        // The measured JP8K hardware test played 11 semitones for a one-octave
+        // keyboard span, so this build tightens the input scale to 313 counts
+        // per volt while keeping the same pitch-unit math.
         //
         // The input itself is not calibrated, so this is the repo's best-known
         // raw-CV convention rather than lab-grade pitch tracking.
