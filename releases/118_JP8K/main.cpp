@@ -96,7 +96,16 @@ public:
 
         bool gate = drone_mode_ || accent_held_;
         if (!gate) {
-            gate = Connected(Input::Pulse1) && PulseIn1();
+            const bool pulse_high = Connected(Input::Pulse1) && PulseIn1();
+            if (!pulse_high) {
+                pulse_gate_armed_ = true;
+                pulse_gate_active_ = false;
+            } else if (pulse_gate_armed_) {
+                pulse_gate_active_ = true;
+            }
+            gate = pulse_gate_active_;
+        } else {
+            pulse_gate_active_ = false;
         }
 
         if (gate) {
@@ -152,6 +161,8 @@ private:
     bool stereo_mode_ = false;
     bool accent_held_ = false;
     bool tune_mode_ = true;
+    bool pulse_gate_armed_ = false;
+    bool pulse_gate_active_ = false;
 
     void update_controls()
     {
@@ -180,7 +191,10 @@ private:
 
         const uint32_t base_inc = pitch_units_to_inc(units);
 
-        int32_t spread = x + CVIn2();
+        int32_t spread = x;
+        if (Connected(Input::CV2)) {
+            spread += CVIn2();
+        }
         spread = clamp_int(spread, 0, 4095);
         tune_mode_ = (spread <= kTuneSpreadDeadband);
 
@@ -189,8 +203,11 @@ private:
         const int32_t detune = tune_mode_ ? 0 : (spread * spread) >> 12; // 0..4095, finer near zero.
         constexpr int32_t ratios[kSawCount] = {-34, -21, -11, 0, 13, 24, 39};
         for (int i = 0; i < kSawCount; ++i) {
-            int32_t offset = (static_cast<int32_t>(base_inc >> 12) * detune * ratios[i]) >> 17;
-            inc_[i] = static_cast<uint32_t>(static_cast<int32_t>(base_inc) + offset);
+            int32_t offset = static_cast<int32_t>(
+                ((static_cast<int64_t>(base_inc) * detune * ratios[i]) >> 29));
+            int32_t detuned = static_cast<int32_t>(base_inc) + offset;
+            if (detuned < 1) detuned = 1;
+            inc_[i] = static_cast<uint32_t>(detuned);
         }
 
         // Y is a simple brightness control. At low values it rounds the stack
@@ -200,7 +217,7 @@ private:
         if (filter_coeff_ > 4095) filter_coeff_ = 4095;
 
         stereo_width_ = (stereo_mode_ && !tune_mode_) ? (spread >> 1) : 0;
-        level_ = 2600 + ((4095 - (spread >> 1)) >> 2);
+        level_ = 3200 + ((4095 - (spread >> 1)) >> 2);
         if (accent_held_) level_ += 450;
         attack_step_ = drone_mode_ ? 4 : 48;
         release_step_ = drone_mode_ ? 2 : 10;
@@ -219,12 +236,12 @@ private:
         for (int i = 0; i < kSawCount; ++i) {
             phase_[i] += inc_[i];
             int32_t saw = static_cast<int32_t>(phase_[i] >> 20) - 2048;
-            sum += saw;
+            sum += saw * ((i == 3) ? 6 : 3);
             side += saw * ((i & 1) ? 1 : -1);
         }
 
         side_state_ = side >> 3;
-        return sum >> 2;
+        return sum >> 4;
     }
 
     void update_leds(bool gate)
