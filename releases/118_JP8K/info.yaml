@@ -11,7 +11,7 @@ summary: >
   and host modes for note/gate playability, pitch bend, and basic CC control.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
-Version: "0.1.11"
+Version: "0.1.12"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
