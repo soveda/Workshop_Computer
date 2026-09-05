@@ -72,6 +72,9 @@ The card runs the RP2040 at 192 MHz by default. A `JP8K_OVERCLOCK_240` build
 define is provided for later testing if the voice grows heavier, but the first
 version should not need it.
 
+Each firmware build is kept as a versioned UF2 in `UF2/JP8K_0.1.x.uf2`.
+`UF2/jp8k.uf2` is the current latest build for quick flashing.
+
 The pitch CV input is intentionally described as approximate. Workshop Computer
 input calibration is not implemented in ComputerCard, so this is designed to be
 musically playable inside the Workshop System rather than a precision
