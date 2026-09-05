@@ -92,7 +92,7 @@ MIDI CCs:
 | CC | Function |
 | --- | --- |
 | 1 or 20 | Spread, replacing X after the first received CC |
-| 21 or 74 | Brightness, replacing Y after the first received CC |
+| 21 or 74 | Brightness in USB host mode; USB device mode keeps physical Y active |
 | 7 | Volume, scaling the output level after the first received CC |
 
 LED 4 shows the USB MIDI setting: dimmer for device mode, brighter for host

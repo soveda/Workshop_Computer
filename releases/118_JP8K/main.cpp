@@ -266,7 +266,8 @@ private:
     {
         const int32_t main = KnobVal(Knob::Main);
         const int32_t x = midi_spread_cc_active_ ? midi_spread_cc_ : KnobVal(Knob::X);
-        const int32_t y = midi_brightness_cc_active_ ? midi_brightness_cc_ : KnobVal(Knob::Y);
+        const int32_t y =
+            (usb_host_mode_ && midi_brightness_cc_active_) ? midi_brightness_cc_ : KnobVal(Knob::Y);
 
         const Switch sw = SwitchVal();
         drone_mode_ = (sw == Switch::Up);
