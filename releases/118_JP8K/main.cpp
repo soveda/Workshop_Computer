@@ -23,6 +23,7 @@ constexpr int32_t kControlMask = 31;
 constexpr int32_t kMaxAudio = 2047;
 constexpr int32_t kMinAudio = -2048;
 constexpr int32_t kTuneSpreadDeadband = 96;
+constexpr int32_t kTransientMax = 4095;
 constexpr int32_t kPitchUnitsPerOctave = 4096;
 constexpr int32_t kPitchInputCountsPerVolt = 313; // 341 * 11/12 from hardware test.
 constexpr int32_t kBaseMidiNote = 36;      // C2, matching fr330hfr33/Cosmik.
@@ -99,11 +100,17 @@ public:
         }
 
         const bool lead_gate = Connected(Input::Pulse1) && PulseIn1();
+        const bool accent_gate = Connected(Input::Pulse2) && PulseIn2();
         const bool gate = drone_mode_ || accent_held_ || lead_gate;
         if (lead_gate && !last_lead_gate_) {
             sync_supersaw_phases();
+            transient_env_ = kTransientMax;
         }
         last_lead_gate_ = lead_gate;
+        if (accent_gate && !last_accent_gate_) {
+            transient_env_ = kTransientMax;
+        }
+        last_accent_gate_ = accent_gate;
 
         if (gate) {
             envelope_ += attack_step_;
@@ -130,6 +137,11 @@ public:
         filter_state_ += ((mono - filter_state_) * filter_coeff_) >> 12;
 
         int32_t mixed = filter_state_;
+        if (transient_env_ > 0) {
+            mixed += (mono * transient_env_) >> 13;
+            transient_env_ -= transient_decay_;
+            if (transient_env_ < 0) transient_env_ = 0;
+        }
         mixed = (mixed * envelope_) >> 12;
         mixed = (mixed * level_) >> 11;
 
@@ -165,6 +177,8 @@ private:
     int32_t stereo_width_ = 0;
     int32_t level_ = 2400;
     int32_t envelope_ = 0;
+    int32_t transient_env_ = 0;
+    int32_t transient_decay_ = 24;
     int32_t attack_step_ = 16;
     int32_t release_step_ = 4;
     bool drone_mode_ = false;
@@ -172,6 +186,7 @@ private:
     bool accent_held_ = false;
     bool tune_mode_ = true;
     bool last_lead_gate_ = false;
+    bool last_accent_gate_ = false;
 
     void update_controls()
     {
@@ -204,7 +219,10 @@ private:
 
         const uint32_t base_inc = pitch_units_to_inc(units);
 
-        int32_t spread = x;
+        int32_t spread = x + (x >> 2);
+        if (x > 2048) {
+            spread += (x - 2048) >> 1;
+        }
         if (Connected(Input::CV2)) {
             spread += CVIn2();
         }
@@ -213,8 +231,8 @@ private:
 
         // Detune is deliberately asymmetric: the centre voice stays stable,
         // while the outer saws fan out more quickly for that animated JP feel.
-        const int32_t detune = tune_mode_ ? 0 : (spread * spread) >> 13; // 0..2047, finer near zero.
-        constexpr int32_t ratios[kSawCount] = {-24, -15, -8, 0, 9, 17, 27};
+        const int32_t detune = tune_mode_ ? 0 : ((spread * spread) >> 13) + (spread >> 3);
+        constexpr int32_t ratios[kSawCount] = {-28, -17, -9, 0, 10, 19, 31};
         for (int i = 0; i < kSawCount; ++i) {
             int32_t offset = static_cast<int32_t>(
                 ((static_cast<int64_t>(base_inc) * detune * ratios[i]) >> 29));
@@ -226,12 +244,17 @@ private:
         // Y is a simple brightness control. At low values it rounds the stack
         // into a warm pad; high values leave the saw edge bright for external
         // filtering in the Workshop System.
-        filter_coeff_ = 96 + ((y * y) >> 12); // 96..4191
+        filter_coeff_ = 220 + ((y * y) >> 12);
+        if (y > 2048) {
+            filter_coeff_ += (y - 2048) >> 1;
+        }
         if (filter_coeff_ > 4095) filter_coeff_ = 4095;
 
-        stereo_width_ = (stereo_mode_ && !tune_mode_) ? (spread >> 2) : 0;
-        level_ = 3400 + ((4095 - (spread >> 1)) >> 2);
-        if (accent_held_) level_ += 450;
+        stereo_width_ = (stereo_mode_ && !tune_mode_) ? (spread >> 3) : 0;
+        level_ = 3600 + ((4095 - (spread >> 1)) >> 3);
+        const bool pulse2_high = Connected(Input::Pulse2) && PulseIn2();
+        if (accent_held_ || pulse2_high) level_ += 420;
+        transient_decay_ = (accent_held_ || pulse2_high) ? 16 : 24;
         attack_step_ = drone_mode_ ? 4 : 48;
         release_step_ = drone_mode_ ? 2 : 10;
     }
@@ -249,11 +272,11 @@ private:
         for (int i = 0; i < kSawCount; ++i) {
             phase_[i] += inc_[i];
             int32_t saw = static_cast<int32_t>(phase_[i] >> 20) - 2048;
-            sum += saw * ((i == 3) ? 12 : 4);
+            sum += saw * ((i == 3) ? 16 : 5);
             side += saw * ((i & 1) ? 1 : -1);
         }
 
-        side_state_ = side >> 4;
+        side_state_ = side >> 5;
         return sum >> 5;
     }
 
