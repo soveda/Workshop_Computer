@@ -23,6 +23,7 @@ constexpr int32_t kControlMask = 31;
 constexpr int32_t kMaxAudio = 2047;
 constexpr int32_t kMinAudio = -2048;
 constexpr int32_t kTuneSpreadDeadband = 96;
+constexpr uint32_t kLeadHoldSamples = 3840; // 80 ms one-shot for gated lead mode.
 constexpr int32_t kPitchUnitsPerOctave = 4096;
 constexpr int32_t kPitchInputCountsPerVolt = 341;
 constexpr int32_t kBaseMidiNote = 36;      // C2, matching fr330hfr33/Cosmik.
@@ -94,18 +95,17 @@ public:
             update_controls();
         }
 
-        bool gate = drone_mode_ || accent_held_;
-        if (!gate) {
-            const bool pulse_high = Connected(Input::Pulse1) && PulseIn1();
-            if (!pulse_high) {
-                pulse_gate_armed_ = true;
-                pulse_gate_active_ = false;
-            } else if (pulse_gate_armed_) {
-                pulse_gate_active_ = true;
-            }
-            gate = pulse_gate_active_;
-        } else {
-            pulse_gate_active_ = false;
+        const bool pulse_high = Connected(Input::Pulse1) && PulseIn1();
+        const bool lead_trigger = pulse_high && !last_pulse_high_;
+        last_pulse_high_ = pulse_high;
+
+        if (lead_trigger && !drone_mode_ && !accent_held_) {
+            lead_hold_samples_ = kLeadHoldSamples;
+        }
+
+        bool gate = drone_mode_ || accent_held_ || (lead_hold_samples_ > 0);
+        if (lead_hold_samples_ > 0) {
+            --lead_hold_samples_;
         }
 
         if (gate) {
@@ -114,6 +114,19 @@ public:
         } else {
             envelope_ -= release_step_;
             if (envelope_ < 0) envelope_ = 0;
+        }
+
+        if (!drone_mode_ && !accent_held_ && envelope_ == 0) {
+            filter_state_ = 0;
+            side_state_ = 0;
+            AudioOut1(0);
+            AudioOut2(0);
+            CVOut1Precise((pitch_units_ - kCenterPitchUnits) << 3);
+            CVOut2Precise((filter_coeff_ - 128) << 5);
+            PulseOut1(false);
+            PulseOut2(false);
+            update_leds(false);
+            return;
         }
 
         int32_t mono = render_supersaw();
@@ -161,8 +174,8 @@ private:
     bool stereo_mode_ = false;
     bool accent_held_ = false;
     bool tune_mode_ = true;
-    bool pulse_gate_armed_ = false;
-    bool pulse_gate_active_ = false;
+    bool last_pulse_high_ = false;
+    uint32_t lead_hold_samples_ = 0;
 
     void update_controls()
     {
