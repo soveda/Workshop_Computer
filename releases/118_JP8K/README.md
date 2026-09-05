@@ -47,7 +47,7 @@ low closes it. When the envelope reaches zero, the audio path is hard-muted.
 
 | Control | Function |
 | --- | --- |
-| Main | Tune / transpose, with CV In 1 added on top |
+| Main | Tune / transpose for CV/gate mode; ignored while MIDI notes are active |
 | X | Supersaw spread / detune; fully counter-clockwise switches to a single saw for tuning |
 | Y | Brightness, from warm pad to raw bright saw |
 | Z Up | Drone stereo mode |
@@ -84,8 +84,8 @@ USB MIDI works in device mode when patched to a computer, and in host mode when
 the Workshop Computer is powering a class-compliant USB MIDI controller. MIDI
 uses channel 1. Note on/off messages play the same voice and act like another
 sustained gate source; pitch bend is +/-2 semitones. While a MIDI note is held,
-the MIDI note sets the base pitch, with Main and CV In 1 still added as
-transpose/trim controls.
+the MIDI note supersedes Main and sets the pitch. CV In 1 is still added on top
+as patchable pitch modulation.
 
 MIDI CCs:
 

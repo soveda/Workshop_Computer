@@ -11,7 +11,7 @@ summary: >
   and host modes for note/gate playability, pitch bend, and basic CC control.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
-Version: "0.1.10"
+Version: "0.1.11"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
@@ -35,7 +35,7 @@ panel:
       description: Reserved for a future character input or external mix path
     - id: CVIn1
       name: Pitch CV
-      description: Bipolar pitch modulation added to Main, hardware-trimmed from the fr330hfr33/CosmikC1zzl3 raw 1V/oct convention to about 313 input counts per volt
+      description: Bipolar pitch modulation added to Main in CV/gate mode, or to the active MIDI note in MIDI mode; hardware-trimmed from the fr330hfr33/CosmikC1zzl3 raw 1V/oct convention to about 313 input counts per volt
     - id: CVIn2
       name: Spread CV
       description: Adds modulation to the detune/spread amount set by X
@@ -79,7 +79,7 @@ controls:
   knobs:
     - main:
         name: Tune
-        description: Two-octave transpose and tuning trim, with 1V/oct-style CV In 1 added on top
+        description: Two-octave transpose and tuning trim for CV/gate mode; ignored while a MIDI note is active
       x:
         name: Spread
         description: Detunes the seven saw oscillators from single-saw tuning mode at minimum to a wide supersaw cloud
