@@ -30,6 +30,9 @@ Out 1** as mono, or use both audio outs for the wide version. A filter,
 VCA/envelope, and short delay after the card will get much closer to the
 classic trance lead shape than the raw oscillator alone.
 
+Patch **Pulse In 2** from an accent rhythm if you want extra bite on selected
+steps. It adds a short attack snap and a small level lift while high.
+
 For an instant hands-free version, flip **Z Up**. The same supersaw stack stays
 open as a drone, with X setting the width and Y setting the edge.
 
@@ -58,6 +61,7 @@ low closes it. When the envelope reaches zero, the audio path is hard-muted.
 | CV In 1 | Pitch CV, roughly 1V/oct across +/-6 V |
 | CV In 2 | Spread modulation |
 | Pulse In 1 | Sustained lead gate |
+| Pulse In 2 | Accent / attack snap |
 | Audio In 1 | Reserved |
 | Audio Out 1 | Left / mono output |
 | Audio Out 2 | Right output |
@@ -72,8 +76,11 @@ The audio engine uses seven integer saw oscillators, fixed-point detune, a
 simple tone filter, and an attack/release envelope. Control calculations run
 every 32 samples so the 48 kHz audio interrupt stays light.
 
-The supersaw mix is centre-weighted with gentler outer detune so it keeps a
-solid pitch core while the side voices add swarm and movement.
+The supersaw mix is centre-weighted with a bright attack transient and a
+sweet-spot spread curve, so X around 10:30-11:30 aims at the classic bright
+trance lead while still leaving room for wider swarm settings.
+
+MIDI control is planned as a later step once the CV/gate voice is stable.
 
 The card runs the RP2040 at 192 MHz by default. A `JP8K_OVERCLOCK_240` build
 define is provided for later testing if the voice grows heavier, but the first

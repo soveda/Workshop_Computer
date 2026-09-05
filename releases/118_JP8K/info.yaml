@@ -10,7 +10,7 @@ summary: >
   stack before it leaves the stereo audio outs.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
-Version: "0.1.7"
+Version: "0.1.8"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
@@ -42,8 +42,8 @@ panel:
       name: Gate
       description: Sustains the lead envelope while high in middle mode
     - id: PulseIn2
-      name: Reserved
-      description: Reserved for sync, accent, or mode control in a later version
+      name: Accent
+      description: Adds a brighter attack snap and level lift while high
   outputs:
     - id: AudioOut1
       name: Left / Mono
