@@ -20,8 +20,6 @@
 namespace {
 
 constexpr int32_t kControlMask = 31;
-constexpr int32_t kGateEngage = 300;   // Audio-input gate threshold, roughly 0.9 V.
-constexpr int32_t kGateRelease = 180;  // Hysteresis keeps slow envelopes stable.
 constexpr int32_t kMaxAudio = 2047;
 constexpr int32_t kMinAudio = -2048;
 constexpr int32_t kTuneSpreadDeadband = 96;
@@ -98,9 +96,7 @@ public:
 
         bool gate = drone_mode_ || accent_held_;
         if (!gate) {
-            if (!gate_latched_ && AudioIn1() > kGateEngage) gate_latched_ = true;
-            if (gate_latched_ && AudioIn1() < kGateRelease) gate_latched_ = false;
-            gate = PulseIn1() || gate_latched_;
+            gate = Connected(Input::Pulse1) && PulseIn1();
         }
 
         if (gate) {
@@ -156,7 +152,6 @@ private:
     bool stereo_mode_ = false;
     bool accent_held_ = false;
     bool tune_mode_ = true;
-    bool gate_latched_ = false;
 
     void update_controls()
     {

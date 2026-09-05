@@ -54,7 +54,7 @@ drone behavior.
 | CV In 1 | Pitch CV, roughly 1V/oct across +/-6 V |
 | CV In 2 | Spread modulation |
 | Pulse In 1 | Gate input |
-| Audio In 1 | Alternate gate/envelope trigger using a threshold |
+| Audio In 1 | Reserved |
 | Audio Out 1 | Left / mono output |
 | Audio Out 2 | Right output |
 | CV Out 1 | Approximate pitch monitor |
