@@ -1,21 +1,23 @@
 draft: true
 Name: JP8K
-short-description: JP-8000 / JP-8080 inspired supersaw voice for CV/gate patches and drones.
+short-description: JP-8000 / JP-8080 inspired supersaw voice with CV/MIDI synth and sting sequencer modes.
 summary: >
   A Workshop Computer virtual-analog voice inspired by the JP-8000 and JP-8080
   supersaw sound, with a Sandstorm-inspired initial setup documented for bright
-  gated leads. Patch CV and gate for a playable Eurorack oscillator, or flip Z
-  up for a self-running drone. Z down is a momentary accent/forced-gate gesture.
+  gated leads. Flip Z up for a playable CV/MIDI synth voice, or set Z middle
+  for a clockable 32-step sequencer seeded from the main sting rhythm in the
+  supplied Sandstorm MIDI file. Z down is a momentary accent/forced-gate gesture.
   X spreads seven fixed-point saw oscillators, while Y darkens or brightens the
   stack before it leaves the stereo audio outs. USB MIDI works in both device
   and host modes for note/gate playability, pitch bend, and basic CC control.
 Language: C++ (RP2040 Pico SDK / ComputerCard)
 Creator: Adrian Vos + AI
-Version: "0.1.12"
+Version: "0.1.13"
 Status: WIP
 License: MIT
 date-created: 2026-09-01
-date-updated: 2026-09-05
+date-updated: 2026-09-09
+Editor: web
 
 tags:
   - oscillator
@@ -40,11 +42,11 @@ panel:
       name: Spread CV
       description: Adds modulation to the detune/spread amount set by X
     - id: PulseIn1
-      name: Gate
-      description: Sustains the lead envelope while high in middle mode
+      name: Gate / Reset
+      description: Sustains the synth envelope while high in Z-up synth mode; resets the sequencer in Z-middle sequencer mode
     - id: PulseIn2
-      name: Accent
-      description: Adds a brighter attack snap and level lift while high
+      name: Accent / Clock
+      description: Adds a brighter attack snap and level lift while high in synth mode; clocks the sequencer from rising edges in sequencer mode
   outputs:
     - id: AudioOut1
       name: Left / Mono
@@ -68,18 +70,18 @@ panel:
 controls:
   switch:
     up:
-      name: Drone Stereo
-      description: Voice stays open continuously with stereo spread active
+      name: Synth
+      description: CV/gate and USB MIDI playable supersaw voice
     middle:
-      name: Supersaw Lead
-      description: Sustained-gate stereo lead mode for the recommended Sandstorm-inspired starting patch
+      name: Sequencer
+      description: Internal or externally clocked 32-step supersaw sequencer seeded with a Sandstorm-sting pattern
     down:
       name: Accent
       description: Momentary held accent that forces the envelope open and slightly lifts the level
   knobs:
     - main:
         name: Tune
-        description: Two-octave transpose and tuning trim for CV/gate mode; ignored while a MIDI note is active
+        description: Tune/transpose in synth mode; tempo in sequencer mode; ignored while a MIDI note is active
       x:
         name: Spread
         description: Detunes the seven saw oscillators from single-saw tuning mode at minimum to a wide supersaw cloud
@@ -90,11 +92,11 @@ controls:
     - display: list
       items:
         - id: LED0
-          name: Drone Mode
-          description: Lit when Z is up
+          name: Synth Mode
+          description: Bright in Z-up synth mode and dim in sequencer mode
         - id: LED1
-          name: Stereo Width
-          description: Brightness follows stereo spread
+          name: Width / Sequencer Tick
+          description: Brightness follows stereo spread in synth mode and pulses with sequencer movement in sequencer mode
         - id: LED2
           name: Gate
           description: Lit while the voice is open

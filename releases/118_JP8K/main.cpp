@@ -2,14 +2,13 @@
 //
 // This is not an attempt to copy Roland firmware. It is a small Workshop-sized
 // instrument built around the same playable idea: a wide, detuned stack of saws
-// that can behave as a CV/gate oscillator or as a self-running drone. The docs'
-// first patch is a Sandstorm-inspired bright gated lead: Z middle, moderate X
-// detune, bright Y, Pulse In 1 for gate, and CV In 1 for the riff. Z down is
-// momentary, so it behaves as a held accent/gate gesture rather than a mode.
+// that can behave as a CV/gate oscillator, USB MIDI voice, or clocked internal
+// sequencer. The first sequencer pattern is seeded from the main sting rhythm
+// in the user's Sandstorm MIDI file.
 //
 // Audio-rate work stays deliberately plain: seven 32-bit phase accumulators,
-// one fixed-point low-pass, one envelope, and integer mixing. Pitch and panel
-// controls are refreshed every 32 samples so the interrupt has breathing room.
+// one fixed-point low-pass, one envelope, and integer mixing. Pitch, panel,
+// USB MIDI, and sequencer control work is handled on core 1.
 
 #include "ComputerCard.h"
 
@@ -42,6 +41,12 @@ constexpr uint8_t kMidiCcSpread = 20;
 constexpr uint8_t kMidiCcBrightnessAlt = 21;
 constexpr uint8_t kMidiCcBrightness = 74;
 constexpr int32_t kMidiActivitySamples = 24000;
+constexpr int kPatternLengthMax = 32;
+constexpr uint8_t kPatternRest = 127;
+constexpr uint8_t kDefaultSequencerTempo = 136;
+constexpr uint8_t kSysexManufacturer = 0x7d;
+constexpr uint8_t kSysexCommandPattern = 0x01;
+constexpr uint8_t kSysexCommandControls = 0x02;
 
 int32_t clamp_int(int32_t v, int32_t lo, int32_t hi)
 {
@@ -121,6 +126,9 @@ public:
     void ProcessUsbMidiByte(uint8_t byte)
     {
         midi_activity_countdown_ = kMidiActivitySamples;
+        if (process_sysex_byte(byte)) {
+            return;
+        }
         process_midi_voice_byte(byte);
     }
 
@@ -150,15 +158,22 @@ public:
             --midi_activity_countdown_;
         }
 
-        const bool lead_gate = Connected(Input::Pulse1) && PulseIn1();
-        const bool accent_gate = Connected(Input::Pulse2) && PulseIn2();
-        const bool midi_gate = midi_note_active_;
-        const bool gate = drone_mode_ || accent_held_ || lead_gate || midi_gate;
+        const bool lead_gate = !sequencer_mode_ && Connected(Input::Pulse1) && PulseIn1();
+        const bool accent_gate = !sequencer_mode_ && Connected(Input::Pulse2) && PulseIn2();
+        const bool midi_gate = !sequencer_mode_ && midi_note_active_;
+        const bool sequence_gate = sequencer_gate_;
+        const uint32_t sequence_trigger = sequencer_trigger_;
+        const bool gate = accent_held_ || lead_gate || midi_gate || sequence_gate;
         if (lead_gate && !last_lead_gate_) {
             sync_supersaw_phases();
             transient_env_ = kTransientMax;
         }
         last_lead_gate_ = lead_gate;
+        if (sequence_trigger != last_sequencer_trigger_) {
+            last_sequencer_trigger_ = sequence_trigger;
+            sync_supersaw_phases();
+            transient_env_ = kTransientMax;
+        }
         if (accent_gate && !last_accent_gate_) {
             transient_env_ = kTransientMax;
         }
@@ -233,11 +248,13 @@ private:
     int32_t attack_step_ = 16;
     int32_t release_step_ = 4;
     bool drone_mode_ = false;
+    bool sequencer_mode_ = false;
     bool stereo_mode_ = false;
     bool accent_held_ = false;
     bool tune_mode_ = true;
     bool last_lead_gate_ = false;
     bool last_accent_gate_ = false;
+    uint32_t last_sequencer_trigger_ = 0;
 
     uint8_t midi_in_channel_ = 0;
     uint8_t midi_running_status_ = 0;
@@ -261,6 +278,38 @@ private:
     volatile bool usb_host_mode_ = false;
     volatile bool usb_midi_connected_ = false;
     volatile int32_t midi_activity_countdown_ = 0;
+    volatile bool sequencer_gate_ = false;
+    volatile uint8_t sequencer_note_ = kCenterMidiNote;
+    volatile bool sequencer_accent_ = false;
+    volatile uint32_t sequencer_trigger_ = 0;
+
+    uint8_t sequencer_tempo_ = kDefaultSequencerTempo;
+    uint8_t pattern_length_ = kPatternLengthMax;
+    uint8_t pattern_step_ = 0;
+    uint8_t pattern_note_[kPatternLengthMax] = {
+        71, 71, 71, 71, 71, kPatternRest, 71, 71,
+        71, 71, 71, 71, 71, kPatternRest, 76, 76,
+        76, 76, 76, 76, 76, kPatternRest, 74, 74,
+        74, 74, 74, 74, 74, kPatternRest, 69, 69
+    };
+    uint8_t pattern_gate_[kPatternLengthMax] = {
+        45, 45, 45, 45, 80, 0, 45, 45,
+        45, 45, 45, 45, 80, 0, 45, 45,
+        45, 45, 45, 45, 80, 0, 45, 45,
+        45, 45, 45, 45, 80, 0, 45, 45
+    };
+    uint32_t pattern_accent_mask_ = 0xC041C041u;
+    uint64_t next_internal_step_us_ = 0;
+    uint64_t sequencer_step_period_us_ = 220588ull;
+    uint64_t sequencer_gate_off_us_ = 0;
+    bool last_clock_high_ = false;
+    bool last_reset_high_ = false;
+    bool sysex_receiving_ = false;
+    bool sysex_matching_ = false;
+    uint8_t sysex_index_ = 0;
+    uint8_t sysex_command_ = 0;
+    uint8_t sysex_payload_[80] = {};
+    uint8_t sysex_payload_len_ = 0;
 
     void update_controls()
     {
@@ -270,9 +319,11 @@ private:
             (usb_host_mode_ && midi_brightness_cc_active_) ? midi_brightness_cc_ : KnobVal(Knob::Y);
 
         const Switch sw = SwitchVal();
-        drone_mode_ = (sw == Switch::Up);
+        drone_mode_ = false;
+        sequencer_mode_ = (sw == Switch::Middle);
         accent_held_ = (sw == Switch::Down);
         stereo_mode_ = true;
+        update_sequencer();
 
         // Main is now a playable transpose/tune control around middle C rather
         // than a huge sweep.
@@ -287,12 +338,16 @@ private:
         //
         // The input itself is not calibrated, so this is the repo's best-known
         // raw-CV convention rather than lab-grade pitch tracking.
-        int32_t units = midi_note_active_ ? midi_note_pitch_units(midi_note_) : kCenterPitchUnits;
-        if (!midi_note_active_) {
+        int32_t units = kCenterPitchUnits;
+        if (sequencer_mode_ && sequencer_gate_) {
+            units = midi_note_pitch_units(sequencer_note_);
+        } else if (midi_note_active_) {
+            units = midi_note_pitch_units(midi_note_);
+        } else {
             units += (((main - 2048) * (2 * kPitchUnitsPerOctave)) >> 12);
         }
         units += (CVIn1() * kPitchUnitsPerOctave) / kPitchInputCountsPerVolt;
-        if (midi_note_active_) {
+        if (!sequencer_mode_ && midi_note_active_) {
             units += (midi_pitch_bend_ * kPitchUnitsPerOctave) / (8192 * 6);
         }
         units = clamp_int(units, kMinPitchUnits, kMaxPitchUnits);
@@ -341,11 +396,11 @@ private:
             const int32_t velocity_scale = 2048 + ((int32_t)midi_velocity_ << 4);
             level_ = (level_ * velocity_scale) >> 12;
         }
-        const bool pulse2_high = Connected(Input::Pulse2) && PulseIn2();
-        if (accent_held_ || pulse2_high) level_ += 420;
-        transient_decay_ = (accent_held_ || pulse2_high) ? 16 : 24;
-        attack_step_ = drone_mode_ ? 4 : 48;
-        release_step_ = drone_mode_ ? 2 : 10;
+        const bool pulse2_high = !sequencer_mode_ && Connected(Input::Pulse2) && PulseIn2();
+        if (accent_held_ || pulse2_high || sequencer_accent_) level_ += 420;
+        transient_decay_ = (accent_held_ || pulse2_high || sequencer_accent_) ? 16 : 24;
+        attack_step_ = 48;
+        release_step_ = 10;
     }
 
     int32_t __not_in_flash_func(render_supersaw)()
@@ -443,6 +498,155 @@ private:
         }
     }
 
+    bool process_sysex_byte(uint8_t byte)
+    {
+        if (byte == 0xF0u) {
+            sysex_receiving_ = true;
+            sysex_matching_ = true;
+            sysex_index_ = 0;
+            sysex_command_ = 0;
+            sysex_payload_len_ = 0;
+            return true;
+        }
+
+        if (!sysex_receiving_) {
+            return false;
+        }
+
+        if (byte == 0xF7u) {
+            if (sysex_matching_) {
+                apply_sysex_message();
+            }
+            sysex_receiving_ = false;
+            return true;
+        }
+
+        if (byte & 0x80u) {
+            sysex_receiving_ = false;
+            return false;
+        }
+
+        static constexpr uint8_t kId[4] = {'J', 'P', '8', 'K'};
+        if (sysex_index_ == 0) {
+            sysex_matching_ = (byte == kSysexManufacturer);
+        } else if (sysex_index_ >= 1 && sysex_index_ <= 4) {
+            sysex_matching_ = sysex_matching_ && (byte == kId[sysex_index_ - 1]);
+        } else if (sysex_index_ == 5) {
+            sysex_command_ = byte;
+        } else if (sysex_payload_len_ < sizeof(sysex_payload_)) {
+            sysex_payload_[sysex_payload_len_++] = byte;
+        }
+        ++sysex_index_;
+        return true;
+    }
+
+    void apply_sysex_message()
+    {
+        if (sysex_command_ == kSysexCommandPattern) {
+            if (sysex_payload_len_ < 4) {
+                return;
+            }
+            const int32_t tempo = sysex_payload_[0] | ((int32_t)sysex_payload_[1] << 7);
+            sequencer_tempo_ = clamp_int(tempo, 30, 240);
+            pattern_length_ = clamp_int(sysex_payload_[2], 1, kPatternLengthMax);
+            pattern_accent_mask_ = sysex_payload_[3];
+            if (sysex_payload_len_ > 4) pattern_accent_mask_ |= (uint32_t)sysex_payload_[4] << 7;
+            if (sysex_payload_len_ > 5) pattern_accent_mask_ |= (uint32_t)sysex_payload_[5] << 14;
+            if (sysex_payload_len_ > 6) pattern_accent_mask_ |= (uint32_t)sysex_payload_[6] << 21;
+            if (sysex_payload_len_ > 7) pattern_accent_mask_ |= (uint32_t)sysex_payload_[7] << 28;
+            uint8_t offset = 8;
+            for (uint8_t i = 0; i < pattern_length_ && offset < sysex_payload_len_; ++i) {
+                uint8_t note = sysex_payload_[offset++];
+                pattern_note_[i] = note <= 127 ? note : kPatternRest;
+            }
+            for (uint8_t i = 0; i < pattern_length_ && offset < sysex_payload_len_; ++i) {
+                pattern_gate_[i] = clamp_int(sysex_payload_[offset++], 5, 100);
+            }
+            pattern_step_ = 0;
+            next_internal_step_us_ = 0;
+            sequencer_gate_ = false;
+        } else if (sysex_command_ == kSysexCommandControls && sysex_payload_len_ >= 3) {
+            midi_spread_cc_ = ((int32_t)sysex_payload_[0] * 4095) / 127;
+            midi_brightness_cc_ = ((int32_t)sysex_payload_[1] * 4095) / 127;
+            midi_volume_cc_ = ((int32_t)sysex_payload_[2] * 4095) / 127;
+            midi_spread_cc_active_ = true;
+            midi_brightness_cc_active_ = usb_host_mode_;
+            midi_volume_cc_active_ = true;
+        }
+    }
+
+    void update_sequencer()
+    {
+        if (!sequencer_mode_) {
+            sequencer_gate_ = false;
+            pattern_step_ = 0;
+            next_internal_step_us_ = 0;
+            return;
+        }
+
+        const uint64_t now = time_us_64();
+        const bool reset_high = Connected(Input::Pulse1) && PulseIn1();
+        if (reset_high && !last_reset_high_) {
+            pattern_step_ = 0;
+            next_internal_step_us_ = 0;
+            sequencer_gate_ = false;
+        }
+        last_reset_high_ = reset_high;
+
+        const bool clock_high = Connected(Input::Pulse2) && PulseIn2();
+        const bool external_step = clock_high && !last_clock_high_;
+        last_clock_high_ = clock_high;
+
+        int32_t tempo = sequencer_tempo_;
+        if (tempo == 0) {
+            tempo = 136;
+        }
+        if (!usb_midi_connected_) {
+            tempo = 60 + ((KnobVal(Knob::Main) * 181) >> 12);
+        }
+        sequencer_step_period_us_ = 60000000ull / ((uint64_t)tempo * 4ull);
+
+        bool internal_step = false;
+        if (!Connected(Input::Pulse2)) {
+            if (next_internal_step_us_ == 0 || now >= next_internal_step_us_) {
+                internal_step = true;
+                next_internal_step_us_ = now + sequencer_step_period_us_;
+            }
+        }
+
+        if (external_step || internal_step) {
+            play_pattern_step(now);
+        }
+
+        if (sequencer_gate_ && now >= sequencer_gate_off_us_) {
+            sequencer_gate_ = false;
+        }
+    }
+
+    void play_pattern_step(uint64_t now)
+    {
+        const uint8_t length = pattern_length_ == 0 ? kPatternLengthMax : pattern_length_;
+        const uint8_t step = pattern_step_ % length;
+        pattern_step_ = (uint8_t)((step + 1u) % length);
+
+        const uint8_t note = pattern_note_[step];
+        if (note == kPatternRest) {
+            sequencer_gate_ = false;
+            sequencer_accent_ = false;
+            return;
+        }
+
+        sequencer_note_ = note;
+        sequencer_accent_ = (pattern_accent_mask_ & (1u << step)) != 0;
+        sequencer_gate_ = true;
+        ++sequencer_trigger_;
+        uint64_t gate = (sequencer_step_period_us_ * pattern_gate_[step]) / 100ull;
+        if (gate < 10000ull) {
+            gate = 10000ull;
+        }
+        sequencer_gate_off_us_ = now + gate;
+    }
+
     int32_t midi_cc_to_control(uint8_t value) const
     {
         return ((int32_t)value * 4095) / 127;
@@ -475,7 +679,8 @@ private:
     void update_leds(bool gate)
     {
         LedOn(0, drone_mode_);
-        LedBrightness(1, stereo_width_);
+        LedBrightness(0, sequencer_mode_ ? 192 : 4095);
+        LedBrightness(1, sequencer_mode_ ? ((pattern_step_ & 1u) ? 4095 : 512) : stereo_width_);
         LedOn(2, gate || accent_held_);
         LedBrightness(3, filter_coeff_);
         int32_t midi_status = usb_host_mode_ ? 2600 : 700;
