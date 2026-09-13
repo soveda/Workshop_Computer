@@ -123,6 +123,10 @@ The card runs the RP2040 at 192 MHz by default. A `JP8K_OVERCLOCK_240` build
 define is provided for later testing if the voice grows heavier, but the first
 version should not need it.
 
+Version 0.1.14 updates JP8K to ComputerCard 0.4.0. Its corrected input bounds
+and full-travel knob scaling are used directly by this card; its existing
+0-4095 control mappings therefore keep their intended endpoint behaviour.
+
 Each firmware build is kept as a versioned UF2 in `UF2/JP8K_0.1.x.uf2`.
 `UF2/jp8k.uf2` is the current latest build for quick flashing.
 
