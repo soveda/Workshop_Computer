@@ -328,16 +328,10 @@ private:
         // Main is now a playable transpose/tune control around middle C rather
         // than a huge sweep.
         //
-        // Start from the 1V/oct convention used by fr330hfr33 and CosmikC1zzl3:
-        //   4096 pitch units = 1 octave
-        //   341 CV input counts = 1 volt
-        //
-        // The measured JP8K hardware test played 11 semitones for a one-octave
-        // keyboard span, so this build tightens the input scale to 313 counts
-        // per volt while keeping the same pitch-unit math.
-        //
-        // The input itself is not calibrated, so this is the repo's best-known
-        // raw-CV convention rather than lab-grade pitch tracking.
+        // One volt is one octave. ComputerCard 0.4.0 stores calibration for
+        // CV inputs in EEPROM; JP8K exposes that existing data through its
+        // local header extension. Older/un-calibrated Computers retain the
+        // hardware-tested 313-counts-per-volt fallback.
         int32_t units = kCenterPitchUnits;
         if (sequencer_mode_ && sequencer_gate_) {
             units = midi_note_pitch_units(sequencer_note_);
@@ -346,7 +340,11 @@ private:
         } else {
             units += (((main - 2048) * (2 * kPitchUnitsPerOctave)) >> 12);
         }
-        units += (CVIn1() * kPitchUnitsPerOctave) / kPitchInputCountsPerVolt;
+        if (InputsCalibrated()) {
+            units += (CVIn1Millivolts() * kPitchUnitsPerOctave) / 1000;
+        } else {
+            units += (CVIn1() * kPitchUnitsPerOctave) / kPitchInputCountsPerVolt;
+        }
         if (!sequencer_mode_ && midi_note_active_) {
             units += (midi_pitch_bend_ * kPitchUnitsPerOctave) / (8192 * 6);
         }

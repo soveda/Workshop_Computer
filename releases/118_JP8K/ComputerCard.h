@@ -398,6 +398,22 @@ protected:
 		return SignedADCToMillivolts((i ? adcInR : adcInL), i);
 	}
 
+	/// Return calibrated CV In 1 in millivolts.
+	///
+	/// ComputerCard 0.4.0 loads calibration data for both CV inputs, although
+	/// its public API exposes only the audio-input helpers. JP8K needs precise
+	/// 1V/oct pitch tracking, so it uses this local extension of that API.
+	int32_t __not_in_flash_func(CVIn1Millivolts)()
+	{
+		return SignedADCToMillivolts(cv[0], 2);
+	}
+
+	/// Return calibrated CV In 2 in millivolts.
+	int32_t __not_in_flash_func(CVIn2Millivolts)()
+	{
+		return SignedADCToMillivolts(cv[1], 3);
+	}
+
 	/*
 	  Where are the CVInMillivolts functions?
 	  

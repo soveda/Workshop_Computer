@@ -21,12 +21,11 @@ For the intended first patch, start with a Sandstorm-inspired supersaw lead:
 | Y | 2 to 3 o'clock for bright saw edge |
 
 Patch **Pulse In 1** from a fast gate or envelope rhythm, and patch **CV In 1**
-from 4 Voltages, a sequencer, or another pitch source. CV In 1 uses the same
-4096-internal-units-per-octave pitch math as fr330hfr33 and CosmikC1zzl3, with
-the input scale trimmed to about 313 counts per volt after hardware testing
-showed 341 counts per volt was about one semitone flat per octave on this card.
-Use Main as the tuning trim because the input is not calibrated. Take **Audio
-Out 1** as mono, or use both audio outs for the wide version. A filter,
+from 4 Voltages, a sequencer, or another pitch source. On Computers with input
+calibration stored in EEPROM, CV In 1 uses the ComputerCard 0.4.0 calibration
+data directly: 1000 mV is one octave. On an uncalibrated Computer it falls
+back to the hardware-tested 313-counts-per-volt scale used by earlier JP8K
+builds. Take **Audio Out 1** as mono, or use both audio outs for the wide version. A filter,
 VCA/envelope, and short delay after the card will get much closer to the
 classic trance lead shape than the raw oscillator alone.
 
@@ -60,7 +59,7 @@ low closes it. When the envelope reaches zero, the audio path is hard-muted.
 
 | Jack | Function |
 | --- | --- |
-| CV In 1 | Pitch CV, roughly 1V/oct across +/-6 V |
+| CV In 1 | Calibrated pitch CV, 1V/oct when input calibration is present |
 | CV In 2 | Spread modulation |
 | Pulse In 1 | Sustained lead gate in synth mode; sequencer reset in sequencer mode |
 | Pulse In 2 | Accent / attack snap in synth mode; sequencer clock in sequencer mode |
@@ -127,13 +126,17 @@ Version 0.1.14 updates JP8K to ComputerCard 0.4.0. Its corrected input bounds
 and full-travel knob scaling are used directly by this card; its existing
 0-4095 control mappings therefore keep their intended endpoint behaviour.
 
+Version 0.1.15 adds calibrated CV In 1 pitch tracking using the CV-input
+calibration data already loaded by ComputerCard 0.4.0. It falls back to the
+previous hardware-tested raw scale when a Computer has no input calibration.
+
 Each firmware build is kept as a versioned UF2 in `UF2/JP8K_0.1.x.uf2`.
 `UF2/jp8k.uf2` is the current latest build for quick flashing.
 
-The pitch CV input is intentionally described as approximate. Workshop Computer
-input calibration is not implemented in ComputerCard, so this is designed to be
-musically playable inside the Workshop System rather than a precision
-laboratory oscillator.
+The pitch CV input is calibrated when the Workshop Computer has valid input
+calibration in EEPROM. On Computers without that data, JP8K retains a
+hardware-tested raw fallback, so it remains musically playable but should be
+trimmed and checked by ear.
 
 For pitch testing, set **Z Up** with a gate patched,
 set **Main** to 12 o'clock, set **X** fully counter-clockwise, leave **CV In 2**
