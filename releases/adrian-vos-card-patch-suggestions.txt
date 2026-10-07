@@ -1,0 +1,179 @@
+WORKSHOP SYSTEM PATCH NOTES — ADRIAN VOS CARDS
+
+These are starting patches designed to be entered and saved in Vincent Maurer's
+Patch Notes tool: record each cable, then set knobs and switches to taste.
+Levels are deliberately conservative; bring feedback, resonance, drive, and
+external modular signals up slowly. “Clock”, “pitch”, “gate”, and “modulation”
+refer to any compatible Workshop System source.
+
+====================================================================
+101 — C1ZZL3 GNARLY: CLOCKED INDUSTRIAL LEAD
+====================================================================
+Patch: clock/gate source → C1ZZL3 gate or trigger input; pitch sequencer →
+pitch CV input; C1ZZL3 audio outs → stereo mixer. Send a slow random CV to one
+tone/modulation input. Start with a short sequence, low resonance, and modest
+drive; raise the random CV amount until every few notes have a different edge.
+
+118 — JP8K-SANDSQUALL: WIDE CLOCKED STING
+====================================================================
+Patch: master clock → sequencer clock input; JP8K stereo outs → mixer. In its
+sequencer mode, start the internal phrase, set spread around the middle and
+brightness slightly below it. Use a slow envelope or random CV on brightness.
+For a second version, take pitch CV and gate from a sequencer instead, and use
+the card as a played supersaw voice.
+
+174 — SKIPPING STONES: SELF-GENERATING HATS AND MELODY
+====================================================================
+Patch: Pulse Out 1 → drum/envelope trigger; Pulse Out 2 → second percussion
+trigger; CV Out 1 → 1V/oct oscillator; CV Out 2 → filter cutoff; oscillator →
+filter/VCA → mixer. Start in Sparse with medium Deja Vu and low Spread. Raise
+Spread for variation, then raise Deja Vu to make a happy accident recur.
+
+197 — COSMIK M1N1: EXTERNAL OSC3 BASS DIALOGUE
+====================================================================
+Patch: pitch sequencer → pitch CV; gate source → gate input; external oscillator
+→ OSC3/audio return; Cosmik audio out → mixer. Begin with low-pass filter half
+open, low resonance, short contour, and slight OSC3 level. Detune the external
+oscillator a little, then open the filter on accents with an envelope or slow CV.
+
+202 — SCARYLINGO: RHYTHMIC RING-MOD DRUM BUS
+====================================================================
+Patch: drum loop → Audio In 1; slow oscillator or sequencer voice → Audio In 2;
+ScaryLingo out → mixer/effect return. Set mix near dry at first and introduce
+ring modulation gradually. Clock a stepped CV into carrier pitch or mix, then
+use the LFO page for a slow sine-to-square movement across the loop.
+
+29 — XHT CARD: CHORD SWARM THROUGH SLOW MOVEMENT
+====================================================================
+Patch: pitch CV → pitch input; gate/clock → trigger input if used; XHT stereo
+outs → mixer. Send one slow triangle LFO to a timbre/shape CV input and a much
+slower random CV to a second modulation input. Start with a stable chord and
+low movement; make the random modulation just audible, not fully chaotic.
+
+34 — DUALQUANT: QUANTISED GRANULAR FEEDBACK VOICE
+====================================================================
+Patch: melodic source or voice → audio input; pitch sequence → pitch CV;
+DualQuant outputs → stereo mixer. If using its calibrated CV outputs, send one
+to an oscillator pitch input and the other to a filter or second oscillator.
+Start with a sparse melody, small granular shift, and short feedback; increase
+the shift in semitone-like steps for a call-and-response line.
+
+433 — 433 SENSE OF SPACE: RESTLESS QUIET ROOM
+====================================================================
+Patch: Pulse Out from a slow clock or manual trigger → restart input; 433 stereo
+outs → mixer → long, quiet reverb. Keep the card's own level restrained and let
+the restlessness/fidget controls make rare events. The Mayakovsky CC0 edition
+uses the same patch; substitute it when its theatre ambience suits the piece.
+
+43 — CASTLE PROCESS: GATED COLLAPSE
+====================================================================
+Patch: drum machine, guitar, or oscillator → audio input; envelope or gate →
+control/trigger input; Castle Process out → mixer. Begin with the chopping and
+feedback low. Use a sparse gate pattern to make rhythmic cuts, then briefly
+increase the harshness or feedback at phrase endings before returning to safety.
+
+49 — TAPE BIAS: RECORDED PHRASE WITH UNSTABLE RECALL
+====================================================================
+Patch: voice, percussion, or field recording → audio input; trigger/clock →
+record or transport trigger if desired; Tape Bias out → mixer. Record a short
+four- to eight-beat phrase, then alter virtual bias slightly while replaying.
+Use slow CV only sparingly: the charm is a recognisable loop becoming imperfect.
+
+52 — F1SHNET: ENVELOPE-FOLLOWING FILTER PERCUSSION
+====================================================================
+Patch: drum loop or plucked oscillator → audio input; F1shnet out → mixer.
+Optionally patch a clock or random CV to its sample-and-hold/control input.
+Set the envelope follower for a clear response to each hit, then introduce
+stepped cutoff changes at a slower division than the drums for a playful groove.
+
+54 — TAPEGRADE: UNEVEN STEREO MEMORY
+====================================================================
+Patch: mono synth, drum loop, or voice → mono input; stereo outs → two mixer
+channels. Start with almost no wow/flutter and moderate dry/wet balance. Add a
+very slow triangle CV to a movement control, then bring in hiss only until it
+appears in gaps. Automate the wet level for transitions rather than leaving it
+fully wet.
+
+580 — VORTEX RUNNER: SPLIT-VOICE CINEMATIC INTERVAL
+====================================================================
+Patch: pitch CV or MIDI → Vortex Runner; gate source → gate input; Audio Out 1
+→ mixer channel A; Audio Out 2 → mixer channel B. Keep Voice A centered and
+Voice B detuned slightly. Give Voice B a darker filter and slower LFO, then pan
+the mixer channels apart. A long gate pattern makes the shared articulation clear.
+
+58 — LOCHO VIBES: SLOW STEREO LIQUID CHORD
+====================================================================
+Patch: chord source → audio input; LoCho Vibes stereo outs → mixer. Begin in
+chorus with a slow sine or triangle LFO, modest depth, and even stereo balance.
+For a transition, increase depth and slow the rate before moving toward vibrato;
+return to chorus before the next rhythmic section.
+
+59 — BITPHASE: RESONANT MOTION WITHOUT LOSING THE BEAT
+====================================================================
+Patch: drum bus, bass, or sustained voice → audio input; BitPhase out → mixer.
+Clock an envelope or stepped CV at one-half or one-quarter of the rhythm into a
+phase/modulation control. Keep resonance below self-oscillation, use tremolo as
+an accent layer, and sweep manually for a single highlighted fill.
+
+74 — WILD PEBBLE: GENERATIVE DUO
+====================================================================
+Patch: MIDI clock or master clock → Wild Pebble clock; its melodic CV →
+oscillator pitch; its gate/pulse → envelope or drum trigger; oscillator → mixer.
+Route a second output to filter cutoff or a second percussion voice. Start with
+a repeating, low-complexity pattern; loosen the generative controls gradually so
+the patch stays related to the original motif.
+
+77 — PUNK CONFUSION: APC TO BROKEN-VENUE DROP
+====================================================================
+Patch A: Punk Confusion audio out → mixer; gate source → Pulse In 1 for APC
+rhythms. Patch B: drum loop or guitar/synth → Audio In 1; output → mixer.
+Begin in APC mode with a simple gate rhythm. On a transition, switch to Broken
+Venue and feed the external source, using a short burst of feedback/room colour;
+use a Down vocal stab only as a punctuation mark.
+
+818 — BIB: DUB SEND WITH MOVING TAPE
+====================================================================
+Patch: stereo drum loop or two related mono sources → Bib inputs; Bib stereo
+outs → mixer return. Send slow CV to the two performance controls. Start with
+short delay, a conservative feedback level, and moderate wet/dry mix. Add tape
+wobble, then bring shimmer up for one transition; lower feedback before changing
+the delay time.
+
+833 — BUZZYBEE: RECORDED XY SWARM
+====================================================================
+Patch: pitch sequence → pitch input; optional gate → Pulse In 1; BuzzyBee stereo
+outs → mixer. Set a simple two- or three-note chord mode, then record a slow XY
+path: corner, diagonal, brief pause, return. Play it back against the sequence.
+Send a very slow LFO to pitch or timbre only after the XY movement is established.
+
+84 — COSMIK C1ZZL3: TURING-MODULATED PHASE DISTORTION
+====================================================================
+Patch: Turing/generative CV source → pitch CV; related pulse → gate; Cosmik
+C1ZZL3 audio out → mixer. Send a second related random CV to phase-distortion
+amount or filter colour. Begin with Core as the stable voice; introduce the Rad
+or Turing-oriented layer at low level, then use clocked probability for variation.
+
+87 — FR330HFR33: ACID SEQUENCE WITH CONTROLLED OVERDRIVE
+====================================================================
+Patch: pitch sequencer → pitch CV; accented gate/trigger → gate input; audio out
+→ mixer. Set saw or square, short decay, mid filter cutoff, and low distortion.
+Use a second sequencer row or envelope for cutoff accents. Raise resonance until
+the accent notes speak, then add drive only enough to thicken the loudest steps.
+
+93 — TURING MATRIX: CLOCKED PROBABILITY MIXER
+====================================================================
+Patch: master clock → Turing Matrix clock; pitch CV → oscillator 1V/oct; pulse
+out → envelope/drum trigger; additional CV/mixer out → filter cutoff; oscillator
+→ VCA → mixer. Start with the loop probability high so a pattern repeats, then
+lower it a little for drifting mutations. Use the mixer layer to crossfade stable
+and unstable control streams during a performance.
+
+999 — DUB WARNING: GATED SIREN SEND
+====================================================================
+Patch: gate or sparse trigger pattern → Pulse In 1; Dub Warning stereo outs →
+mixer. Optional pitch/modulation CV → CV In 1, or audio/CV source → Audio In 1.
+Begin in Gated mode with low effect amount. Use a small pitch sweep for each hit,
+then increase delay/effect for the final bar; fire the Wheel Up gesture only as a
+one-shot fill.
+
+END OF PATCH NOTES

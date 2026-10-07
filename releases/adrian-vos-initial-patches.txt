@@ -1,0 +1,122 @@
+ADRIAN VOS CARDS — INITIAL PATCHES
+
+These are first-use starting points, distilled from the cards' READMEs and
+info.yaml files. Start at low level and make one change at a time. Routes
+named "to mixer" mean use the Workshop mixer inputs and monitor from its
+main outputs.
+
+101 C1ZZL3 GNARLY
+Select Oscillator 1 and a recipe from its oscillator page. Keep shared pitch
+near centre, then take Audio Out 1 to the mixer. Add only a gentle LFO to one
+modulation input after the core sound is working.
+
+118 JP8K SANDSQUALL
+Use the documented Supersaw Lead initial setup. Start Voice A, bring in Voice B
+with only slight detune, and send the audio output to the mixer. Increase spread
+slowly once the basic lead is audible.
+
+174 SKIPPING STONES
+Choose Coupled mode with moderate density. Send CV Out 1 to oscillator pitch and
+Pulse Out 1 to an envelope or Slopes trigger. Route the oscillator through a VCA
+to the mixer; add the second output only when the first rhythm is reliable.
+
+197 COSMIK M1N1
+Start with the Filter Voice at modest resonance. Patch pitch CV and a gate to the
+voice inputs, then route its audio output to the mixer. Keep the filter part-open
+and leave external OSC3 disconnected until the basic bass voice works.
+
+202 SCARYLINGO
+On the Performance page, connect one sound source to Audio In 1 and route the
+output to the mixer. Begin with carrier, mix and drive low. Increase ring-mod mix
+only after confirming the dry input is heard.
+
+29 XHT
+Follow the Quick Guide's default sound. Connect pitch CV and a trigger if using
+one, then route the stereo outputs to the mixer. Keep movement controls low and
+add slow modulation only after a stable chord is audible.
+
+34 DUALQUANT
+Feed a short clean phrase to the audio input and route the output to the mixer.
+Start with minimal granular shift and feedback. If using its quantised CV, patch
+one output to oscillator pitch before trying the second.
+
+43 CASTLE PROCESS
+Put a simple oscillator or drum loop into the audio input and take the output to
+the mixer. Select the middle mode, keep chopping low, and raise feedback only
+after clean processing is confirmed.
+
+433 SENSE OF SPACE
+Begin in a quiet room with the output at a low level. Route the audio output to
+the mixer and use a slow or manual trigger only if the card's restart input is
+needed. Let the controls create occasional events rather than dense activity.
+
+49 TAPE BIAS
+Record a short mono phrase into the audio input and route the output to the
+mixer. Set Bias around centre and make only a small adjustment during replay.
+Keep transport triggering and CV disconnected for the first pass.
+
+52 F1SHNET
+Feed a steady, filtered sound or drum loop into the input and route its output to
+the mixer. Set a stable filter response with low resonance. Add envelope following
+or stepped modulation only once the unmodulated signal is clear.
+
+54 TAPEGRADE
+Send a mono sound to the input and use both outputs as a stereo pair into the
+mixer. Start at neutral tape condition: nearly no wow/flutter and modest wet mix.
+Introduce one movement control very slowly.
+
+58 LOCHO VIBES
+Feed a chord or sustained stereo source through LoCho Vibes and take the stereo
+outputs to the mixer. Start in chorus with low rate and depth. Keep the effect
+subtle before moving towards vibrato.
+
+580 VORTEX RUNNER
+On the oscillator page, start Voice A, then add Voice B with slight detune.
+Route Audio Out 1 to one mixer channel and Audio Out 2 to a second channel.
+Keep Voice B quieter until the two outputs are understood.
+
+59 BITPHASE
+Feed a drum loop, bass or held note into the audio input and route the output to
+the mixer. Use a slow phaser setting and low resonance. Do not add tremolo or CV
+until the phase sweep is clearly audible.
+
+74 WILD PEBBLE
+In Steady mode, connect the primary trigger/clock input. Send its quantised CV
+to oscillator pitch and its pulse to an envelope or Slopes trigger. Route the
+resulting voice to the mixer; keep generative variation low to start.
+
+77 PUNK CONFUSION
+Start in Atari Punk Console mode with a low output level and route the main audio
+output to the mixer. A simple gate into Pulse In 1 supplies rhythm. Leave Broken
+Venue and external audio for the second experiment.
+
+818 BIB
+Use the main page with low mix and feedback. Feed one sound into the input and
+route the output to the mixer. Establish a short, clear delay first; add tape
+motion and shimmer only after checking feedback remains controlled.
+
+833 BUZZYBEE
+Connect stable pitch and gate sources, then route its audio output to the mixer.
+Set a simple sound before using XY. Record one short, slow XY gesture, listen to
+it back, and only then add further modulation.
+
+84 COSMIK C1ZZL3
+Build a stable voice from Oscillator 1 Core and take Audio Out 1 to the mixer.
+Use pitch CV and a related gate if available. Keep phase-distortion or Turing
+modulation at zero for the first sound, then raise one amount gently.
+
+87 FR330HFR33
+Create a filtered voice with pitch and gate, then route its audio output to the
+mixer. Begin with low drive and modest resonance. Add an accented cutoff control
+only after the basic sequence speaks consistently.
+
+93 TURING MATRIX
+Follow the documented quickstart: clock one channel, patch its quantised CV to
+oscillator pitch, and patch its gate to an envelope or Slopes input. Route that
+oscillator through a VCA to the mixer. Begin with a repeating pattern before
+adding probability changes.
+
+999 DUB WARNING
+Start in Gated mode. Feed Pulse In 1 from a sparse trigger, route both audio
+outputs to two mixer channels, and keep effect level low. Add one pitch or CV
+input only once the gated siren is working.
