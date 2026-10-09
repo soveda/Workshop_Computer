@@ -42,7 +42,11 @@ jobs:
               { owner, repo, run_id: Number(process.env.WORKFLOW_RUN_ID), per_page: 100 },
             );
             const artifact = artifacts.find(item => /^validation-report-\d+$/.test(item.name));
-            if (!artifact) throw new Error('Validation report artifact was not found');
+            if (!artifact) {
+              // PRs that touch no program card are skipped and upload no report.
+              core.info('No validation report for this run; nothing to post.');
+              return;
+            }
             const issue_number = Number(artifact.name.slice('validation-report-'.length));
             const findReport = directory => {
               for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {

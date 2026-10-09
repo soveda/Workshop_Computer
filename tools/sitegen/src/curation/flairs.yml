@@ -295,3 +295,11 @@ assignments:
     - classic
   "999_Dub_Warning":
     - toms-pick
+  # You spin me round
+  122_You_Spin_Me_Round: []
+  # CVSeq
+  802_CVSeq: []
+  # UMWELT
+  40_UMWELT: []
+  # Dot Dash
+  505_dot_dash: []
