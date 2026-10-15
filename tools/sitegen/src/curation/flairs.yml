@@ -225,7 +225,6 @@ assignments:
   "90_Pantograph": []
   "91_chorgan":
     - instant-win
-  "92_usb_midi_host_synth": []
   "93_Turing_Matrix": []
   "94_Ouroboros": []
   "95_offair2":
@@ -307,3 +306,7 @@ assignments:
   113_Constancy: []
   # Spatial Disorientation
   333_Spatial_Disorientation: []
+  # Blueberry Smoothie
+  873_Blueberry_Smoothie: []
+  # Quattro Formaggio
+  92_quattro_formaggio: []
