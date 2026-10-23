@@ -3,7 +3,8 @@
 C1ZZL3 Gnarly is a dual-oscillator phase-distortion synth for the Music Thing
 Modular Workshop Computer. It is a no-Turing, performance-focused C1ZZL3
 version, with two oscillator lanes, recipe wave banks, named sound presets, and
-CZ patch import support.
+CZ patch import support. An optional 8mu v2 firmware adds hands-on performance
+and envelope editing while retaining the same sound engine and Web MIDI editor.
 
 ## What It Does
 
@@ -12,6 +13,7 @@ CZ patch import support.
 - Saves named sound presets from the browser editor.
 - Uses four recipe banks for simple, compound, resonant, and CZ-style sounds.
 - Responds to USB MIDI notes and MIDI CC performance controls.
+- Offers alternative firmware for 8mu v2 performance and custom-envelope editing.
 - Removes Turing CV, pulse, and generated MIDI output so the panel can focus on
   synthesiser control.
 
@@ -49,49 +51,26 @@ settings.
 
 ## Recipe Banks
 
-- Bank 1: simple single-wave families.
-- Bank 2: warmer compound pairings with double-sine support.
-- Bank 3: brighter resonant/windowed pairings.
-- Bank 4: odd/import-faithful CZ-style pairings for translated patches.
+| Bank | Sound character |
+|---|---|
+| 1 | Simple single-wave families. |
+| 2 | Warmer compound pairings with double-sine support. |
+| 3 | Brighter resonant/windowed pairings. |
+| 4 | Odd/import-faithful CZ-style pairings for translated patches. |
 
-Recipe slots by bank:
+Each oscillator recipe slot selects one entry from the current bank. Bank 1
+contains the eight plain C1ZZL3 wave families; Banks 2–4 use fixed compound recipes.
 
-- Bank 1:
-  Slot 1 `Saw`
-  Slot 2 `Square`
-  Slot 3 `Narrow pulse`
-  Slot 4 `Double sine`
-  Slot 5 `Saw pulse`
-  Slot 6 `Resonant saw window`
-  Slot 7 `Resonant triangle window`
-  Slot 8 `Resonant trapezoid window`
-- Bank 2:
-  Slot 1 `Double sine + Saw`
-  Slot 2 `Double sine + Square`
-  Slot 3 `Saw + Double sine`
-  Slot 4 `Square + Double sine`
-  Slot 5 `Narrow pulse + Double sine`
-  Slot 6 `Saw pulse + Double sine`
-  Slot 7 `Resonant triangle window + Double sine`
-  Slot 8 `Resonant trapezoid window + Double sine`
-- Bank 3:
-  Slot 1 `Resonant saw window + Saw`
-  Slot 2 `Resonant triangle window + Square`
-  Slot 3 `Resonant trapezoid window + Narrow pulse`
-  Slot 4 `Resonant saw window + Saw pulse`
-  Slot 5 `Resonant triangle window + Saw pulse`
-  Slot 6 `Resonant trapezoid window + Saw pulse`
-  Slot 7 `Resonant saw window + Narrow pulse`
-  Slot 8 `Resonant trapezoid window + Square`
-- Bank 4:
-  Slot 1 `Saw pulse + Double sine`
-  Slot 2 `Resonant triangle window + Double sine`
-  Slot 3 `Saw pulse + Narrow pulse`
-  Slot 4 `Resonant trapezoid window + Double sine`
-  Slot 5 `Resonant saw window + Saw pulse`
-  Slot 6 `Narrow pulse + Resonant trapezoid window`
-  Slot 7 `Square + Resonant saw window`
-  Slot 8 `Resonant triangle window + Narrow pulse`
+| Slot | Bank 1: simple waves | Bank 2: warm compounds | Bank 3: resonant compounds | Bank 4: CZ-style pairings |
+|---|---|---|---|---|
+| 1 | `Saw` | `Double sine + Saw` | `Resonant saw window + Saw` | `Saw pulse + Double sine` |
+| 2 | `Square` | `Double sine + Square` | `Resonant triangle window + Square` | `Resonant triangle window + Double sine` |
+| 3 | `Narrow pulse` | `Saw + Double sine` | `Resonant trapezoid window + Narrow pulse` | `Saw pulse + Narrow pulse` |
+| 4 | `Double sine` | `Square + Double sine` | `Resonant saw window + Saw pulse` | `Resonant trapezoid window + Double sine` |
+| 5 | `Saw pulse` | `Narrow pulse + Double sine` | `Resonant triangle window + Saw pulse` | `Resonant saw window + Saw pulse` |
+| 6 | `Resonant saw window` | `Saw pulse + Double sine` | `Resonant trapezoid window + Saw pulse` | `Narrow pulse + Resonant trapezoid window` |
+| 7 | `Resonant triangle window` | `Resonant triangle window + Double sine` | `Resonant saw window + Narrow pulse` | `Square + Resonant saw window` |
+| 8 | `Resonant trapezoid window` | `Resonant trapezoid window + Double sine` | `Resonant trapezoid window + Square` | `Resonant triangle window + Narrow pulse` |
 
 These are weighted blends rather than strict 50/50 mixes, so each recipe keeps
 more of the character of its first waveform.
@@ -124,6 +103,30 @@ MIDI CC controls:
 - `CC25`: oscillator 2 phase distortion.
 - `CC26`: noise/grit amount.
 - `CC27`: oscillator 1 phase distortion, for eight-knob controllers.
+
+## Optional 8mu v2 Firmware
+
+Flash [Gnarly_C1ZZL3_8mu.uf2](uf2/Gnarly_C1ZZL3_8mu.uf2) for the Music Thing
+8mu v2 option. This is alternative firmware; it retains the Gnarly sound engine
+and Web MIDI editor and adds direct performance and envelope control from 8mu.
+
+Import the eight bundled [8mu bank files](8mu_banks/README.md) one at a time with
+the [16n Faderbank editor](https://16n-faderbank.github.io/editor/), selecting the
+destination bank on the 8mu before each import. These controller banks are
+separate from the four synthesiser recipe banks described above.
+
+- **Bank 1:** regular Gnarly performance parameters. Buttons A–D send unused
+  CCs 124–127 and do not play notes.
+- **Banks 2–7:** faders 1–8 edit envelope stages 1–8 for Amp1, Amp2, PD1, PD2,
+  Pitch1 and Pitch2 respectively. Button A selects level editing, B selects time
+  editing, C saves the current custom envelope and D reverts the current lane.
+- **Bank 8:** fader 1 selects the envelope/custom slot; faders 2–7 set Amp1, PD1,
+  Pitch1, Pitch2, PD2 and Amp2 depths; fader 8 sets master depth.
+
+Only saved custom sound-preset slots are editable. Select a saved custom slot
+with bank 8 before editing a lane; factory envelopes remain read-only. Gesture
+mappings are intentionally disabled. See the [main README](README.md#if-you-have-an-8mu)
+and [bank guide](8mu_banks/README.md) for the matching firmware and setup details.
 
 ## Web MIDI Editor
 
